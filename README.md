@@ -22,7 +22,7 @@ src/
   data/catalog.ts      # product/category source of truth
   lib/                 # cart + order business logic
   types/               # shared types
-public/brand/          # official logo + flavor board assets
+public/Assets/         # official logo + flavor board assets
 ```
 
 ## Run locally
@@ -36,13 +36,15 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000)
 
 - Customer menu: `/`
-- Staff orders: `/staff`
+- Staff login: `/login`
+- Staff dashboard: `/staff`
+- Admin dashboard: `/admin`
 
 ## Brand assets
 
-Official logo and category boards live in `public/brand/`:
+Official logo and category boards live in `public/Assets/Assets/`:
 
-- `logo.png`
-- `juicy.png`, `yogu.png`, `milky.png`, `lite.png`, `premium.png`, `dip.png`, `oat.png`, `specialty.png`
+- `Picole Logo PNG.avif`
+- `Dip.avif`, `Lite.avif`, `Premium.avif`, `Milky.avif`, `Specialty.avif`, `Strawberry(with dalandan).avif`
 
 Demo prices are placeholders until client pricing is confirmed.
