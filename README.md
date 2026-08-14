@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Picolé Order
 
-## Getting Started
+Mobile-first QR ordering prototype for **Picolé Healthy Ice Pops**.
 
-First, run the development server:
+Customers scan a stall QR code → browse official flavor lines → cart → checkout (cash change calculation or e-wallet) → confirmation → order status. Staff manage orders at `/staff`.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS
+- Local domain layer for cart/orders (ready to swap for Supabase later)
+
+## Architecture
+
+```
+src/
+  app/                 # routes (UI)
+  components/
+    customer/          # customer UI
+    staff/             # staff UI
+    ui/                # shared presentational primitives
+  data/catalog.ts      # product/category source of truth
+  lib/                 # cart + order business logic
+  types/               # shared types
+public/brand/          # official logo + flavor board assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Run locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd picole-order
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000)
 
-## Learn More
+- Customer menu: `/`
+- Staff orders: `/staff`
 
-To learn more about Next.js, take a look at the following resources:
+## Brand assets
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Official logo and category boards live in `public/brand/`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `logo.png`
+- `juicy.png`, `yogu.png`, `milky.png`, `lite.png`, `premium.png`, `dip.png`, `oat.png`, `specialty.png`
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Demo prices are placeholders until client pricing is confirmed.

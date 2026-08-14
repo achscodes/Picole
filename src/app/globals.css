@@ -1,26 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cream: #fffbf7;
+  --cream-strong: #f9f6ee;
+  --ink: #1a2e1a;
+  --ink-muted: #5c6b5c;
+  --brand-green: #3d9168;
+  --brand-green-dark: #2d6a4f;
+  --brand-green-soft: #e8f5ee;
+  --brand-red: #e05252;
+  --peach: #ffe4cc;
+  --blush: #f5ddd8;
+  --mint: #d8efe4;
+  --sidebar: #1a3d7a;
+  --sidebar-active: #1e6fe8;
+  --sidebar-soft: #dbeafe;
+  --background: var(--cream);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hero-gradient {
+  background:
+    linear-gradient(
+      90deg,
+      #fff8e7 0%,
+      #ffe8d4 22%,
+      var(--peach) 38%,
+      var(--blush) 58%,
+      var(--mint) 82%,
+      #e8f5f0 100%
+    );
+}
+
+::selection {
+  background: #cce8d8;
 }
