@@ -39,6 +39,7 @@ Open [http://localhost:3000](http://localhost:3000)
 - Staff login: `/login`
 - Staff dashboard: `/staff`
 - Admin dashboard: `/admin`
+- Admin Demo Login: Email: admin@picole.com Pass: admin123
 
 ## Brand assets
 
