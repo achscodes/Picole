@@ -45,7 +45,7 @@ Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to 
 - Login: `/login`
 - Admin dashboard: `/admin` (Dashboard, POS, Transactions, Products, Inventory, Sales,
   Analytics, Staff Management, Settings)
-- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory)
+- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory, Sales)
 - Admin Demo Login: Email: admin@picole.com Pass: admin123
 - Staff Demo Login: Email: staff@picole.com Pass: staff123
 
