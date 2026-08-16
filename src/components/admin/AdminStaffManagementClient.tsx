@@ -7,11 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FilterPill } from "@/components/ui/FilterPill";
-import {
-  deleteStaffAccount,
-  listStaffAccounts,
-  updateStaffStatus,
-} from "@/lib/auth";
+import { deleteStaffAccount, listStaffAccounts, updateStaffStatus } from "@/lib/auth";
 import type { StaffAccount, StaffStatus } from "@/types/auth";
 
 const TABS: Array<{ key: StaffStatus | "all"; label: string }> = [

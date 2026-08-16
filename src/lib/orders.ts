@@ -7,7 +7,7 @@ import type {
   PaymentMethod,
 } from "@/types";
 import { getProductById } from "@/lib/product-store";
-import { deductStockForItems, getInventoryItem } from "@/lib/inventory";
+import { deductStockForSale, getInventoryItem } from "@/lib/inventory";
 
 const ORDERS_KEY = "picole.orders.v1";
 const AVAILABILITY_KEY = "picole.availability.v1";
@@ -127,8 +127,15 @@ export interface CreateOrderInput {
   cashReceived?: number;
   ewalletProvider?: string;
   customerType?: CustomerType;
+  discountIdNumber?: string;
 }
 
+/**
+ * Creates a POS sale. Every check below (stock, cash, discount ID) runs before
+ * anything is written to storage or deducted from inventory, and the order is
+ * persisted already "completed" in one step — so a failed sale can never leave
+ * a stock deduction or an orphaned pending order behind.
+ */
 export function createOrder(input: CreateOrderInput): Order {
   const items = buildOrderItems(input.cart);
   if (items.length === 0) {
@@ -150,29 +157,32 @@ export function createOrder(input: CreateOrderInput): Order {
     );
   }
 
+  let discountIdNumber: string | undefined;
+  if (pendingDiscount) {
+    discountIdNumber = input.discountIdNumber?.trim();
+    if (!discountIdNumber) {
+      throw new Error("Please enter the customer's ID number.");
+    }
+  }
+
   const { discountRate, discountAmount, total: discountedTotal } = calcDiscount(
     subtotalBeforeDiscount,
     customerType,
   );
-  const totalAmount = pendingDiscount
-    ? subtotalBeforeDiscount
-    : discountedTotal;
+  const totalAmount = discountedTotal;
 
+  // Cashiers collect cash against the full pre-discount total — the discount
+  // is only confirmed once the ID above checks out, and change is calculated
+  // against the discounted total below.
+  const cashCheckTotal = pendingDiscount ? subtotalBeforeDiscount : totalAmount;
   if (input.paymentMethod === "cash") {
-    const cash = input.cashReceived ?? totalAmount;
-    if (cash < totalAmount) {
+    const cash = input.cashReceived ?? cashCheckTotal;
+    if (cash < cashCheckTotal) {
       throw new Error(
         "The cash amount entered is less than your order total. Please enter a sufficient amount.",
       );
     }
   }
-
-  deductStockForItems(
-    items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-    })),
-  );
 
   const now = new Date().toISOString();
   const existing = readOrders();
@@ -182,16 +192,16 @@ export function createOrder(input: CreateOrderInput): Order {
     items,
     totalAmount,
     paymentMethod: input.paymentMethod,
-    paymentStatus: "pending",
-    orderStatus: "pending",
+    paymentStatus: "verified",
+    orderStatus: "completed",
     pickupName: input.pickupName?.trim() || undefined,
     cashReceived:
       input.paymentMethod === "cash"
-        ? (input.cashReceived ?? totalAmount)
+        ? (input.cashReceived ?? cashCheckTotal)
         : undefined,
     expectedChange:
       input.paymentMethod === "cash"
-        ? calcExpectedChange(input.cashReceived ?? totalAmount, totalAmount)
+        ? calcExpectedChange(input.cashReceived ?? cashCheckTotal, totalAmount)
         : undefined,
     ewalletProvider:
       input.paymentMethod === "ewallet"
@@ -199,12 +209,20 @@ export function createOrder(input: CreateOrderInput): Order {
         : undefined,
     customerType,
     subtotalBeforeDiscount,
-    discountStatus: pendingDiscount ? "pending" : "none",
-    discountRate: pendingDiscount ? discountRate : discountRate || undefined,
-    discountAmount: pendingDiscount ? discountAmount : discountAmount || undefined,
+    discountStatus: pendingDiscount ? "verified" : "none",
+    discountIdNumber,
+    discountRate: discountRate || undefined,
+    discountAmount: discountAmount || undefined,
     createdAt: now,
     updatedAt: now,
   };
+
+  // Deduct stock and record the sale movement last, once the order is
+  // otherwise guaranteed to persist — never before a sale actually completes.
+  deductStockForSale(
+    items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    order.id,
+  );
 
   writeOrders([order, ...existing]);
   return order;

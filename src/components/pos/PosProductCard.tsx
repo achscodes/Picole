@@ -8,11 +8,14 @@ import { formatPeso } from "@/lib/format";
 export function PosProductCard({
   product,
   available,
+  outOfStock = false,
   quantityInCart = 0,
   onAdd,
 }: {
   product: Product;
   available: boolean;
+  /** True specifically when stock has hit zero, vs. a manual "sold out" override. */
+  outOfStock?: boolean;
   quantityInCart?: number;
   onAdd: (productId: string) => void;
 }) {
@@ -44,7 +47,7 @@ export function PosProductCard({
         {!available && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/55 backdrop-blur-[1px]">
             <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--ink)] shadow-sm">
-              Sold Out
+              {outOfStock ? "Out of Stock" : "Sold Out"}
             </span>
           </div>
         )}

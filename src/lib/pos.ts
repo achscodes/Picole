@@ -1,17 +1,16 @@
 import type { CartItem, CustomerType, Order, PaymentMethod, Product } from "@/types";
-import {
-  createOrder,
-  needsDiscountVerification,
-  updateOrderStatus,
-  verifyOrderDiscount,
-} from "@/lib/orders";
+import { createOrder } from "@/lib/orders";
 
 export function isProductAvailable(
   product: Product,
   overrides: Record<string, boolean>,
+  stock?: number,
 ): boolean {
-  if (product.id in overrides) return overrides[product.id];
-  return product.available;
+  const manuallyAvailable =
+    product.id in overrides ? overrides[product.id] : product.available;
+  if (!manuallyAvailable) return false;
+  if (stock !== undefined && stock <= 0) return false;
+  return true;
 }
 
 export interface PosSaleInput {
@@ -24,26 +23,13 @@ export interface PosSaleInput {
 }
 
 export function completePosSale(input: PosSaleInput): Order {
-  const order = createOrder({
+  return createOrder({
     cart: input.cart,
     paymentMethod: input.paymentMethod,
     pickupName: input.pickupName,
     cashReceived: input.cashReceived,
     customerType: input.customerType,
+    discountIdNumber: input.discountIdNumber,
     ewalletProvider: input.paymentMethod === "ewallet" ? "GCash" : undefined,
   });
-
-  const customerType = input.customerType ?? "regular";
-  if (needsDiscountVerification(customerType)) {
-    const result = verifyOrderDiscount(order.id, input.discountIdNumber ?? "");
-    if (!result.ok) {
-      throw new Error(result.error);
-    }
-  }
-
-  const finalized = updateOrderStatus(order.id, "completed");
-  if (!finalized) {
-    throw new Error("Could not finalize the sale.");
-  }
-  return finalized;
 }

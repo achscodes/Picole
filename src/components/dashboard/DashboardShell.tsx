@@ -5,15 +5,14 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  ClipboardList,
   Package,
   Warehouse,
   Tag,
+  ToggleLeft,
   History,
   BarChart3,
   Settings,
   LogOut,
-  ExternalLink,
   Users,
   ShoppingCart,
   Menu,
@@ -32,21 +31,24 @@ type NavItem = {
 };
 
 const STAFF_NAV: NavItem[] = [
-  { href: "/staff/pos", label: "New Order", icon: ShoppingCart },
-  { href: "/staff/orders", label: "Orders", icon: ClipboardList },
-  { href: "/staff/order-history", label: "Transactions", icon: History },
+  { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/staff/pos", label: "POS", icon: ShoppingCart },
+  { href: "/staff/transactions", label: "Transactions", icon: History },
+  { href: "/staff/products", label: "Products", icon: Package },
+  { href: "/staff/availability", label: "Availability", icon: ToggleLeft },
+  { href: "/staff/inventory", label: "Inventory", icon: Warehouse },
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { href: "/admin/pos", label: "New Order", icon: ShoppingCart },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/orders", label: "Orders", icon: ClipboardList },
-  { href: "/admin/staff-management", label: "Staff Management", icon: Users },
+  { href: "/admin/pos", label: "POS", icon: ShoppingCart },
+  { href: "/admin/transactions", label: "Transactions", icon: History },
   { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/inventory", label: "Inventory Management", icon: Warehouse },
+  { href: "/admin/availability", label: "Availability", icon: ToggleLeft },
+  { href: "/admin/inventory", label: "Inventory", icon: Warehouse },
   { href: "/admin/sales", label: "Sales", icon: Tag },
-  { href: "/admin/order-history", label: "Transactions", icon: History },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/staff-management", label: "Staff Management", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -90,7 +92,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   }
 
   const nav = role === "admin" ? ADMIN_NAV : STAFF_NAV;
-  const subtitle = role === "admin" ? "Admin Dashboard" : "Cashier";
+  const subtitle = role === "admin" ? "Admin Dashboard" : "Staff";
 
   return (
     <div className="flex min-h-dvh hero-gradient">
@@ -150,13 +152,6 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </nav>
 
         <div className="space-y-1 border-t border-white/10 px-3 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
-          >
-            <ExternalLink className="h-4 w-4" />
-            View customer site
-          </Link>
           <button
             type="button"
             onClick={() => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Users, ShoppingBag, Wallet, Clock } from "lucide-react";
+import { ShoppingBag, Wallet, Receipt, Package } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SalesTrendCard } from "@/components/dashboard/SalesTrendCard";
@@ -32,14 +32,30 @@ export function AdminDashboardClient() {
     <>
       <PageHeader
         title="Dashboard"
-        subtitle="Overview of stall operations and staff activity."
+        subtitle="Today's overview of stall operations."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Today's Orders" value={stats.todayOrders} icon={ShoppingBag} />
-        <StatCard label="Today's Sales" value={formatPeso(stats.todaySales)} icon={Wallet} />
-        <StatCard label="Pending Staff" value={pendingStaff} icon={Users} />
-        <StatCard label="Active Orders" value={stats.activeQueue.length} icon={Clock} />
+        <StatCard
+          label="Today's Sales"
+          value={formatPeso(stats.todaySales)}
+          icon={Wallet}
+        />
+        <StatCard
+          label="Transactions"
+          value={stats.todayTransactions}
+          icon={Receipt}
+        />
+        <StatCard
+          label="Avg. Sale"
+          value={formatPeso(stats.averageSale)}
+          icon={ShoppingBag}
+        />
+        <StatCard
+          label="Products Available"
+          value={stats.productsAvailable}
+          icon={Package}
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -48,7 +64,7 @@ export function AdminDashboardClient() {
         <div className="rounded-card bg-white p-5 shadow-card">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-bold text-[var(--ink)]">
-              Pending Staff Approvals
+              Pending Staff Approvals{pendingStaff > 0 ? ` (${pendingStaff})` : ""}
             </h2>
             <Link
               href="/admin/staff-management"

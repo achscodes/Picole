@@ -10,6 +10,11 @@ import { cn } from "@/lib/format";
 
 type Tab = "login" | "register";
 
+function roleHomePath(role: "admin" | "staff") {
+  if (role === "admin") return "/admin";
+  return "/staff";
+}
+
 export function LoginClient() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("login");
@@ -27,9 +32,7 @@ export function LoginClient() {
       setError(result.error);
       return;
     }
-    router.replace(
-      result.session.role === "admin" ? "/admin/pos" : "/staff/pos",
-    );
+    router.replace(roleHomePath(result.session.role));
   }
 
   function handleRegister(e: React.FormEvent) {
@@ -67,7 +70,7 @@ export function LoginClient() {
             Staff and Admin
           </h1>
           <p className="mt-1 text-sm text-[var(--ink-muted)]">
-            Sign in to manage orders, products, and reports
+            Sign in to manage sales, products, and reports
           </p>
         </div>
 

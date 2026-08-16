@@ -18,7 +18,9 @@ function readStaff(): StaffAccount[] {
   if (!canUseStorage()) return [];
   try {
     const raw = localStorage.getItem(STAFF_KEY);
-    return raw ? (JSON.parse(raw) as StaffAccount[]) : [];
+    const parsed = raw ? (JSON.parse(raw) as StaffAccount[]) : [];
+    // Legacy records predate the role field, or predate the inventory-role merge — normalize to "staff".
+    return parsed.map((s) => ({ ...s, role: "staff" as const }));
   } catch {
     return [];
   }
@@ -39,6 +41,17 @@ export function getSession(): Session | null {
   }
 }
 
+const ROLE_COOKIE = "picole_role";
+
+function setRoleCookie(role: Session["role"] | null) {
+  if (!canUseStorage()) return;
+  if (role) {
+    document.cookie = `${ROLE_COOKIE}=${role}; path=/; max-age=604800; samesite=lax`;
+  } else {
+    document.cookie = `${ROLE_COOKIE}=; path=/; max-age=0`;
+  }
+}
+
 function setSession(session: Session | null) {
   if (!canUseStorage()) return;
   if (session) {
@@ -46,6 +59,7 @@ function setSession(session: Session | null) {
   } else {
     localStorage.removeItem(SESSION_KEY);
   }
+  setRoleCookie(session?.role ?? null);
 }
 
 export function login(
@@ -85,7 +99,7 @@ export function login(
   const session: Session = {
     userId: staff.id,
     email: staff.email,
-    role: "staff",
+    role: staff.role ?? "staff",
     name: staff.name,
   };
   setSession(session);
@@ -115,6 +129,7 @@ export function registerStaff(
     email: normalized,
     password,
     name: name.trim(),
+    role: "staff",
     status: "pending",
     createdAt: new Date().toISOString(),
   });

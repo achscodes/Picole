@@ -7,11 +7,13 @@ import { PosProductCard } from "@/components/pos/PosProductCard";
 export function PosProductGrid({
   products,
   isAvailable,
+  isOutOfStock,
   quantities,
   onAdd,
 }: {
   products: Product[];
   isAvailable: (product: Product) => boolean;
+  isOutOfStock?: (product: Product) => boolean;
   quantities: Record<string, number>;
   onAdd: (productId: string) => void;
 }) {
@@ -33,6 +35,7 @@ export function PosProductGrid({
           key={product.id}
           product={product}
           available={isAvailable(product)}
+          outOfStock={isOutOfStock?.(product) ?? false}
           quantityInCart={quantities[product.id] ?? 0}
           onAdd={onAdd}
         />

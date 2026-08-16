@@ -7,6 +7,7 @@ export interface StaffAccount {
   email: string;
   password: string;
   name: string;
+  role: "staff";
   status: StaffStatus;
   createdAt: string;
 }

@@ -1,7 +1,6 @@
 import { listProducts } from "@/lib/product-store";
-import { listInventory } from "@/lib/inventory";
-import { listOrders } from "@/lib/orders";
-import type { Order, OrderStatus } from "@/types";
+import { getAvailabilityOverrides, listOrders } from "@/lib/orders";
+import type { Order } from "@/types";
 
 export function isToday(iso: string) {
   const d = new Date(iso);
@@ -43,24 +42,8 @@ export function formatShortTime(iso: string) {
   });
 }
 
-export function getOrdersByStatus(orders: Order[], status: OrderStatus) {
-  return orders.filter((o) => o.orderStatus === status);
-}
-
-export function getActiveOrders(orders: Order[]) {
-  return orders.filter(
-    (o) =>
-      o.orderStatus !== "completed" &&
-      o.orderStatus !== "cancelled",
-  );
-}
-
 export function getCompletedOrders(orders: Order[]) {
   return orders.filter((o) => o.orderStatus === "completed");
-}
-
-export function getTodayOrders(orders: Order[]) {
-  return orders.filter((o) => isToday(o.createdAt));
 }
 
 export function sumSales(orders: Order[]) {
@@ -71,16 +54,25 @@ export function sumSales(orders: Order[]) {
 
 export function getDashboardStats() {
   const orders = listOrders();
-  const today = getTodayOrders(orders);
-  const todayCompleted = today.filter((o) => o.orderStatus === "completed");
+  const completed = getCompletedOrders(orders);
+  const todayCompleted = completed.filter((o) => isToday(o.createdAt));
+  const todaySales = sumSales(todayCompleted);
+
+  const products = listProducts();
+  const availability = getAvailabilityOverrides();
+  const productsAvailable = products.filter(
+    (p) => availability[p.id] ?? p.available,
+  ).length;
 
   return {
-    todayOrders: today.length,
-    pending: getOrdersByStatus(orders, "pending").length,
-    preparing: getOrdersByStatus(orders, "preparing").length,
-    ready: getOrdersByStatus(orders, "ready").length,
-    todaySales: sumSales(todayCompleted),
-    activeQueue: getActiveOrders(orders),
+    todaySales,
+    todayTransactions: todayCompleted.length,
+    averageSale: todayCompleted.length
+      ? Math.round(todaySales / todayCompleted.length)
+      : 0,
+    productsAvailable,
+    productsSoldOut: products.length - productsAvailable,
+    recentTransactions: completed.slice(0, 5),
   };
 }
 
@@ -161,14 +153,6 @@ export function getPaymentBreakdown() {
   const cash = orders.filter((o) => o.paymentMethod === "cash").length;
   const ewallet = orders.filter((o) => o.paymentMethod === "ewallet").length;
   return { cash, ewallet, total: orders.length };
-}
-
-export function getStockValue() {
-  const inventory = listInventory();
-  return inventory.reduce((sum, item) => {
-    const product = listProducts().find((p) => p.id === item.productId);
-    return sum + (product?.price ?? 0) * item.stock;
-  }, 0);
 }
 
 export function filterOrdersByPeriod(

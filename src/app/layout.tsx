@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Outfit } from "next/font/google";
-import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 const body = Nunito({
@@ -14,10 +13,10 @@ const display = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Picolé Healthy Ice Pops | Order",
+  title: "Picolé Healthy Ice Pops | Staff Portal",
   description:
-    "Scan, browse, and order Picolé Healthy Ice Pops for stall pickup.",
-  applicationName: "Picolé Order",
+    "Internal point-of-sale and business management system for Picolé Healthy Ice Pops staff.",
+  applicationName: "Picolé POS",
 };
 
 export const viewport: Viewport = {
@@ -33,9 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${body.variable} ${display.variable} h-full`}>
-      <body className="min-h-dvh antialiased">
-        <Providers>{children}</Providers>
-      </body>
+      <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
 }

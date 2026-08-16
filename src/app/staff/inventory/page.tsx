@@ -1,5 +1,5 @@
-import { InventoryClient } from "@/components/dashboard/InventoryClient";
+import { InventoryManagementClient } from "@/components/inventory/InventoryManagementClient";
 
 export default function StaffInventoryPage() {
-  return <InventoryClient />;
+  return <InventoryManagementClient historyHref="/staff/inventory/history" />;
 }

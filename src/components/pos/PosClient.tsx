@@ -14,6 +14,7 @@ import { filterProductsByCategory, searchProducts } from "@/data/catalog";
 import { getAvailabilityOverrides } from "@/lib/orders";
 import { isProductAvailable } from "@/lib/pos";
 import { listProducts } from "@/lib/product-store";
+import { listInventory } from "@/lib/inventory";
 import type { CategoryId, Order, Product } from "@/types";
 
 type Screen = "catalog" | "checkout" | "receipt";
@@ -21,6 +22,7 @@ type Screen = "catalog" | "checkout" | "receipt";
 export function PosClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [availability, setAvailability] = useState<Record<string, boolean>>({});
+  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
   const [activeCategory, setActiveCategory] = useState<CategoryId>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [screen, setScreen] = useState<Screen>("catalog");
@@ -32,6 +34,9 @@ export function PosClient() {
     function refresh() {
       setProducts(listProducts());
       setAvailability(getAvailabilityOverrides());
+      const stock: Record<string, number> = {};
+      for (const item of listInventory()) stock[item.productId] = item.stock;
+      setStockByProduct(stock);
     }
     refresh();
     const id = window.setInterval(refresh, 3000);
@@ -46,8 +51,14 @@ export function PosClient() {
   const cart = usePosCart(getProduct);
 
   const isAvailable = useCallback(
-    (product: Product) => isProductAvailable(product, availability),
-    [availability],
+    (product: Product) =>
+      isProductAvailable(product, availability, stockByProduct[product.id]),
+    [availability, stockByProduct],
+  );
+
+  const isOutOfStock = useCallback(
+    (product: Product) => (stockByProduct[product.id] ?? 1) <= 0,
+    [stockByProduct],
   );
 
   const visibleProducts = useMemo(
@@ -112,6 +123,7 @@ export function PosClient() {
           <PosProductGrid
             products={visibleProducts}
             isAvailable={isAvailable}
+            isOutOfStock={isOutOfStock}
             quantities={cart.quantities}
             onAdd={handleAdd}
           />

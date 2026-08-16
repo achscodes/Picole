@@ -1,44 +1,52 @@
-# Picolé Order
+# Picolé POS
 
-Mobile-first QR ordering prototype for **Picolé Healthy Ice Pops**.
-
-Customers scan a stall QR code → browse official flavor lines → cart → checkout (cash change calculation or e-wallet) → confirmation → order status. Staff manage orders at `/staff`.
+Internal point-of-sale and business management system for **Picolé Healthy Ice Pops**
+staff. Admins and cashiers sign in, ring up sales through the POS, manage products and
+availability, and review transactions, sales, and analytics. There is no customer-facing
+side — this application is for authorized staff only.
 
 ## Stack
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS
-- Local domain layer for cart/orders (ready to swap for Supabase later)
+- Local domain layer for products/orders/inventory/auth (ready to swap for a real backend
+  later — currently all state lives in the browser's `localStorage`)
 
 ## Architecture
 
 ```
 src/
   app/                 # routes (UI)
+    admin/             # full-access admin routes
+    staff/             # restricted cashier routes
+    login/             # shared staff/admin sign-in
   components/
-    customer/          # customer UI
-    staff/             # staff UI
+    admin/             # admin-only screens
+    staff/             # staff screens (products, dashboard)
+    dashboard/         # shared shell + management screens (POS-adjacent)
+    pos/               # point-of-sale UI
     ui/                # shared presentational primitives
   data/catalog.ts      # product/category source of truth
-  lib/                 # cart + order business logic
+  lib/                 # auth, product, inventory, and order/POS business logic
   types/               # shared types
+  middleware.ts        # role-based route protection
 public/Assets/         # official logo + flavor board assets
 ```
 
 ## Run locally
 
 ```bash
-cd picole-order
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to `/login`.
 
-- Customer menu: `/`
-- Staff login: `/login`
-- Staff dashboard: `/staff`
-- Admin dashboard: `/admin`
+- Login: `/login`
+- Admin dashboard: `/admin` (Dashboard, POS, Transactions, Products, Availability,
+  Inventory, Sales, Analytics, Staff Management, Settings)
+- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Availability,
+  Inventory)
 - Admin Demo Login: Email: admin@picole.com Pass: admin123
 
 ## Brand assets
