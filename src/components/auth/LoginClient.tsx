@@ -28,7 +28,7 @@ export function LoginClient() {
       return;
     }
     router.replace(
-      result.session.role === "admin" ? "/admin" : "/staff",
+      result.session.role === "admin" ? "/admin/pos" : "/staff/pos",
     );
   }
 
@@ -50,7 +50,7 @@ export function LoginClient() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--cream)] px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-card bg-white p-8 shadow-card">
         <div className="text-center">
           <Image
             src={BRAND.logo}
@@ -94,7 +94,7 @@ export function LoginClient() {
         </div>
 
         {error && (
-          <p className="mt-4 rounded-2xl bg-[#FDE8E8] px-4 py-3 text-sm text-[#B42318]">
+          <p className="mt-4 rounded-2xl bg-danger-bg px-4 py-3 text-sm text-danger-text">
             {error}
           </p>
         )}

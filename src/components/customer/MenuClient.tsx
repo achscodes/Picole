@@ -3,24 +3,31 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, Leaf, Sparkles, Sun, ShoppingBag } from "lucide-react";
-import { CATEGORIES } from "@/data/catalog";
+import { CATEGORIES, searchProducts } from "@/data/catalog";
 import { filterProducts, listProducts } from "@/lib/product-store";
 import type { CategoryId, Product } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { BrandImage } from "@/components/ui/BrandImage";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { FilterPill } from "@/components/ui/FilterPill";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { StickyActionBar } from "@/components/ui/StickyActionBar";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { ProductSheet } from "@/components/customer/ProductSheet";
 import { formatPeso } from "@/lib/format";
 import { useCart } from "@/lib/cart-context";
-import { cn } from "@/lib/format";
 
 export function MenuClient() {
   const [category, setCategory] = useState<CategoryId>("all");
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Product | null>(null);
   const { itemCount, subtotal } = useCart();
 
-  const products = useMemo(() => filterProducts(category), [category]);
+  const products = useMemo(
+    () => searchProducts(filterProducts(category), search),
+    [category, search],
+  );
   const favorites = useMemo(
     () => listProducts().filter((p) => p.bestSeller).slice(0, 3),
     [],
@@ -77,28 +84,12 @@ export function MenuClient() {
         </h2>
         <div className="mt-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-3 lg:overflow-visible">
           {favorites.map((product) => (
-            <button
+            <ProductCard
               key={product.id}
-              type="button"
-              onClick={() => setSelected(product)}
-              className="flex min-w-[220px] items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-[0_6px_18px_rgba(26,46,26,0.05)] lg:min-w-0"
-            >
-              <BrandImage
-                src={product.image}
-                alt={product.name}
-                variant="thumb"
-                className="h-14 w-14 shrink-0"
-                sizes="56px"
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--ink)]">
-                  {product.name}
-                </p>
-                <p className="text-sm font-bold text-[var(--brand-green)]">
-                  {formatPeso(product.price)}
-                </p>
-              </div>
-            </button>
+              product={product}
+              variant="compact"
+              onOpen={setSelected}
+            />
           ))}
         </div>
       </section>
@@ -115,25 +106,27 @@ export function MenuClient() {
           set.
         </p>
 
+        <div className="mt-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search flavors..."
+          />
+        </div>
+
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-wrap lg:overflow-visible">
           {CATEGORIES.map((cat) => (
-            <button
+            <FilterPill
               key={cat.id}
-              type="button"
-              onClick={() => setCategory(cat.id)}
-              className={cn(
-                "shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition",
-                category === cat.id
-                  ? "bg-[var(--brand-green)] text-white shadow-sm"
-                  : "bg-white text-[var(--ink)] shadow-sm",
-              )}
+              active={category === cat.id}
+              onSelect={() => setCategory(cat.id)}
             >
               {cat.name}
-            </button>
+            </FilterPill>
           ))}
         </div>
 
-        {activeCategory?.image && (
+        {activeCategory?.image && !search && (
           <BrandImage
             src={activeCategory.image}
             alt={activeCategory.name}
@@ -143,29 +136,32 @@ export function MenuClient() {
           />
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onOpen={setSelected}
+        {products.length === 0 ? (
+          <div className="mt-5">
+            <EmptyState
+              title="No products found"
+              description="Try searching for another product."
             />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onOpen={setSelected}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {itemCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-          <Link
-            href="/cart"
-            className="mx-auto flex max-w-lg items-center justify-between rounded-full bg-[var(--brand-green)] px-5 py-3.5 text-white shadow-lg lg:max-w-xl"
-          >
-            <span className="text-sm font-semibold">
-              View Cart · {itemCount} item{itemCount === 1 ? "" : "s"}
-            </span>
-            <span className="text-sm font-bold">{formatPeso(subtotal)}</span>
-          </Link>
-        </div>
+        <StickyActionBar
+          href="/cart"
+          left={`View Cart · ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+          right={formatPeso(subtotal)}
+        />
       )}
 
       <ProductSheet

@@ -15,9 +15,9 @@ type BrandImageProps = {
 const variantStyles = {
   thumb: "h-14 w-14 shrink-0 rounded-full p-1.5",
   cart: "h-20 w-20 shrink-0 rounded-2xl p-1.5",
-  card: "aspect-[4/5] rounded-t-3xl p-3 sm:p-4",
-  banner: "aspect-[16/9] min-h-[9rem] rounded-3xl p-4 sm:min-h-[11rem] sm:p-6",
-  sheet: "aspect-[4/5] rounded-3xl p-4 sm:p-6",
+  card: "aspect-[4/5] rounded-t-card p-3 sm:p-4",
+  banner: "aspect-[16/9] min-h-[9rem] rounded-card p-4 sm:min-h-[11rem] sm:p-6",
+  sheet: "aspect-[4/5] rounded-modal p-4 sm:p-6",
 };
 
 export function BrandImage({

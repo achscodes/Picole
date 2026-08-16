@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { FilterPill } from "@/components/ui/FilterPill";
 import { listOrders, updateOrderStatus, verifyOrderDiscount } from "@/lib/orders";
 import { formatPeso } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types";
-import { cn } from "@/lib/format";
 
 const NEXT: Partial<Record<OrderStatus, { label: string; next: OrderStatus }>> =
   {
@@ -82,10 +82,11 @@ function DiscountVerifyPanel({
         />
       </label>
       {error && (
-        <p className="mt-2 text-xs text-[#B42318]">{error}</p>
+        <p className="mt-2 text-xs text-danger-text">{error}</p>
       )}
       <Button
-        className="mt-3 !bg-[var(--sidebar-active)]"
+        variant="staff"
+        className="mt-3"
         onClick={() => {
           const result = verifyOrderDiscount(order.id, idNumber);
           if (!result.ok) {
@@ -136,19 +137,14 @@ export function StaffOrdersClient() {
 
       <div className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
-          <button
+          <FilterPill
             key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold capitalize transition",
-              filter === f
-                ? "bg-[var(--brand-green)] text-white"
-                : "border border-black/10 bg-white text-[var(--ink)] hover:bg-[var(--cream-strong)]",
-            )}
+            active={filter === f}
+            onSelect={() => setFilter(f)}
+            className="capitalize"
           >
             {f === "active" ? "Active" : f}
-          </button>
+          </FilterPill>
         ))}
       </div>
 
@@ -164,7 +160,7 @@ export function StaffOrdersClient() {
             return (
               <article
                 key={order.id}
-                className="rounded-3xl bg-white p-5 shadow-sm"
+                className="rounded-card bg-white p-5 shadow-card"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -177,7 +173,7 @@ export function StaffOrdersClient() {
                       </p>
                     )}
                     {order.discountStatus === "pending" && (
-                      <Badge tone="warm" className="mt-2 normal-case">
+                      <Badge tone="warm" casing="normal" className="mt-2">
                         {order.customerType === "pwd" ? "PWD" : "Senior"} ·
                         discount pending
                       </Badge>

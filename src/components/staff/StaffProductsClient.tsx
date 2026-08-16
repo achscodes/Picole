@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { BrandImage } from "@/components/ui/BrandImage";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { ProductFormModal } from "@/components/staff/ProductFormModal";
 import { getCategoryById } from "@/data/catalog";
 import {
@@ -51,7 +52,7 @@ export function StaffProductsClient() {
         }
       />
 
-      <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
+      <div className="overflow-hidden rounded-card bg-white shadow-card">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
@@ -112,19 +113,15 @@ export function StaffProductsClient() {
                       </button>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex gap-2 text-[var(--ink-muted)]">
-                        <button
-                          type="button"
-                          className="rounded-lg p-2 hover:bg-[var(--cream-strong)]"
-                          aria-label="Edit product"
+                      <div className="flex gap-2">
+                        <IconButton
+                          icon={Pencil}
+                          label="Edit product"
                           onClick={() => setEditing(product)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-lg p-2 hover:bg-[var(--cream-strong)]"
-                          aria-label="Delete product"
+                        />
+                        <IconButton
+                          icon={Trash2}
+                          label="Delete product"
                           onClick={() => {
                             if (
                               window.confirm(
@@ -135,9 +132,7 @@ export function StaffProductsClient() {
                               refresh();
                             }
                           }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>

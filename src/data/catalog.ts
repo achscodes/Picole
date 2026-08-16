@@ -174,3 +174,16 @@ export function filterProductsByCategory(
     return products.filter((p) => p.bestSeller);
   return products.filter((p) => p.categoryId === categoryId);
 }
+
+/** Matches by product name, description, or flavor category name. */
+export function searchProducts(products: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return products;
+  return products.filter((p) => {
+    if (p.name.toLowerCase().includes(q)) return true;
+    if (p.description.toLowerCase().includes(q)) return true;
+    const category = getCategoryById(p.categoryId);
+    if (category?.name.toLowerCase().includes(q)) return true;
+    return false;
+  });
+}

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { LineChart } from "@/components/dashboard/LineChart";
 import {
   getBestSellers,
   getOrdersByDay,
@@ -18,13 +19,17 @@ export function ReportsClient() {
   const completed = orders.filter((o) => o.orderStatus === "completed");
   const totalSales = sumSales(completed);
   const avgOrder = completed.length ? totalSales / completed.length : 0;
-  const salesChart = getSalesByDay(14);
-  const ordersChart = getOrdersByDay(14);
+  const salesChart = getSalesByDay(14).map((d) => ({
+    label: d.label,
+    value: d.amount,
+  }));
+  const ordersChart = getOrdersByDay(14).map((d) => ({
+    label: d.label,
+    value: d.count,
+  }));
   const bestSellers = getBestSellers(5);
   const payments = getPaymentBreakdown();
 
-  const maxSales = Math.max(...salesChart.map((d) => d.amount), 1);
-  const maxOrders = Math.max(...ordersChart.map((d) => d.count), 1);
   const paymentTotal = payments.cash + payments.ewallet || 1;
 
   return (
@@ -41,45 +46,33 @@ export function ReportsClient() {
       </div>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="rounded-card bg-white p-5 shadow-card">
           <h2 className="font-display text-base font-bold text-[var(--ink)]">
             Sales over time
           </h2>
-          <div className="mt-6 flex h-44 items-end gap-1">
-            {salesChart.map((day) => (
-              <div
-                key={day.date}
-                className="flex-1 rounded-t bg-[var(--brand-green)]/70"
-                style={{
-                  height: `${Math.max(4, (day.amount / maxSales) * 100)}%`,
-                }}
-                title={`${day.label}: ${formatPeso(day.amount)}`}
-              />
-            ))}
+          <div className="mt-4">
+            <LineChart
+              data={salesChart}
+              height={192}
+              valueFormatter={(v) =>
+                v >= 1000 ? `₱${Math.round(v / 100) / 10}k` : `₱${v}`
+              }
+            />
           </div>
         </div>
 
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="rounded-card bg-white p-5 shadow-card">
           <h2 className="font-display text-base font-bold text-[var(--ink)]">
             Orders over time
           </h2>
-          <div className="mt-6 flex h-44 items-end gap-1">
-            {ordersChart.map((day) => (
-              <div
-                key={day.date}
-                className="flex-1 rounded-t bg-[#F5B942]"
-                style={{
-                  height: `${Math.max(4, (day.count / maxOrders) * 100)}%`,
-                }}
-                title={`${day.label}: ${day.count}`}
-              />
-            ))}
+          <div className="mt-4">
+            <LineChart data={ordersChart} height={192} />
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="rounded-card bg-white p-5 shadow-card">
           <h2 className="font-display text-base font-bold text-[var(--ink)]">
             Best-selling products
           </h2>
@@ -104,7 +97,7 @@ export function ReportsClient() {
           </ol>
         </div>
 
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="rounded-card bg-white p-5 shadow-card">
           <h2 className="font-display text-base font-bold text-[var(--ink)]">
             Payment method distribution
           </h2>

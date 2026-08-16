@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { getFlavorCategories } from "@/data/catalog";
 import {
   createProduct,
@@ -109,7 +110,7 @@ export function ProductFormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
       <div
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-3xl bg-[var(--cream)] shadow-xl"
+        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-modal bg-[var(--cream)] shadow-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-form-title"
@@ -121,19 +122,12 @@ export function ProductFormModal({
           >
             {isEdit ? "Edit Product" : "Add Product"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 text-[var(--ink-muted)] hover:bg-black/5"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <IconButton icon={X} label="Close" onClick={onClose} />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           {error && (
-            <p className="rounded-2xl bg-[#FDE8E8] px-4 py-3 text-sm text-[#B42318]">
+            <p className="rounded-2xl bg-danger-bg px-4 py-3 text-sm text-danger-text">
               {error}
             </p>
           )}

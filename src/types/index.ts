@@ -23,6 +23,7 @@ export interface Category {
   id: CategoryId;
   name: string;
   image?: string;
+  /** Reserved for a future per-category accent treatment; not yet rendered anywhere. */
   accent: string;
   benefits: string[];
 }

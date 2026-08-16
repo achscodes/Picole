@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { Banknote, Smartphone, HeartHandshake } from "lucide-react";
 import { CustomerHeader } from "@/components/customer/CustomerHeader";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SelectableChip } from "@/components/ui/SelectableChip";
+import { StickyActionBar } from "@/components/ui/StickyActionBar";
 import { useCart } from "@/lib/cart-context";
 import { getProductById } from "@/lib/product-store";
 import {
@@ -143,11 +146,15 @@ export function CheckoutClient() {
     return (
       <div className="min-h-dvh bg-[var(--cream)]">
         <CustomerHeader />
-        <main className="mx-auto max-w-lg px-4 py-10 text-center">
-          <p className="text-sm text-[var(--ink-muted)]">Your cart is empty.</p>
-          <Link href="/" className="mt-4 inline-block">
-            <Button>Back to Menu</Button>
-          </Link>
+        <main className="mx-auto max-w-lg px-4 py-10">
+          <EmptyState
+            title="Your cart is empty"
+            action={
+              <Link href="/" className="inline-block">
+                <Button>Back to Menu</Button>
+              </Link>
+            }
+          />
         </main>
       </div>
     );
@@ -159,7 +166,7 @@ export function CheckoutClient() {
       <main className="mx-auto max-w-lg space-y-4 px-4 pb-28 pt-6 lg:max-w-xl">
         <h1 className="text-2xl font-bold text-[var(--ink)]">Checkout</h1>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-card bg-white p-4 shadow-card">
           <h2 className="text-sm font-semibold text-[var(--ink)]">
             Order Summary
           </h2>
@@ -188,7 +195,7 @@ export function CheckoutClient() {
               <span>{formatPeso(subtotalBeforeDiscount)}</span>
             </div>
             {requiresIdVerification && discountAmount > 0 && (
-              <p className="rounded-xl bg-[var(--sidebar-soft)] px-3 py-2 text-xs text-[var(--sidebar)]">
+              <p className="rounded-xl bg-[var(--brand-green-soft)] px-3 py-2 text-xs text-[var(--brand-green-dark)]">
                 {customerType === "pwd" ? "PWD" : "Senior Citizen"} discount of{" "}
                 {formatPeso(discountAmount)} will be applied after staff verifies
                 your ID at the stall.
@@ -207,7 +214,7 @@ export function CheckoutClient() {
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-card bg-white p-4 shadow-card">
           <div className="flex items-center gap-2">
             <HeartHandshake className="h-4 w-4 text-[var(--brand-green)]" />
             <h2 className="text-sm font-semibold text-[var(--ink)]">
@@ -220,27 +227,18 @@ export function CheckoutClient() {
           </p>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {CUSTOMER_TYPES.map((type) => (
-              <button
+              <SelectableChip
                 key={type.id}
-                type="button"
-                onClick={() => setCustomerType(type.id)}
-                className={cn(
-                  "rounded-2xl border p-3 text-left transition",
-                  customerType === type.id
-                    ? "border-[var(--brand-green)] bg-[var(--brand-green-soft)]"
-                    : "border-black/10 bg-white",
-                )}
-              >
-                <p className="text-sm font-semibold">{type.label}</p>
-                <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
-                  {type.hint}
-                </p>
-              </button>
+                selected={customerType === type.id}
+                onSelect={() => setCustomerType(type.id)}
+                label={type.label}
+                hint={type.hint}
+              />
             ))}
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-card bg-white p-4 shadow-card">
           <label className="text-sm font-semibold text-[var(--ink)]">
             Name for pickup (optional)
           </label>
@@ -252,12 +250,12 @@ export function CheckoutClient() {
           />
         </section>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-card bg-white p-4 shadow-card">
           <h2 className="text-sm font-semibold text-[var(--ink)]">
             Payment Method
           </h2>
           {requiresIdVerification && (
-            <p className="mt-1 text-xs font-medium text-[var(--sidebar)]">
+            <p className="mt-1 text-xs font-medium text-[var(--brand-green-dark)]">
               Cash payment is required for PWD / Senior Citizen orders.
             </p>
           )}
@@ -267,51 +265,37 @@ export function CheckoutClient() {
               requiresIdVerification ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2",
             )}
           >
-            <button
-              type="button"
-              onClick={() => {
+            <SelectableChip
+              selected={paymentMethod === "cash"}
+              onSelect={() => {
                 setPaymentMethod("cash");
                 setCashMode(null);
               }}
-              className={cn(
-                "rounded-2xl border p-4 text-left transition",
-                paymentMethod === "cash"
-                  ? "border-[var(--brand-green)] bg-[var(--brand-green-soft)]"
-                  : "border-black/10 bg-white",
-              )}
-            >
-              <Banknote className="mb-2 h-5 w-5 text-[var(--brand-green)]" />
-              <p className="font-semibold">Cash</p>
-              <p className="text-xs text-[var(--ink-muted)]">
-                {requiresIdVerification
+              icon={Banknote}
+              label="Cash"
+              hint={
+                requiresIdVerification
                   ? "Required — pay at the stall"
-                  : "Pay at the stall"}
-              </p>
-            </button>
+                  : "Pay at the stall"
+              }
+            />
             {!requiresIdVerification && (
-              <button
-                type="button"
-                onClick={() => {
+              <SelectableChip
+                selected={paymentMethod === "ewallet"}
+                onSelect={() => {
                   setPaymentMethod("ewallet");
                   setCashMode(null);
                 }}
-                className={cn(
-                  "rounded-2xl border p-4 text-left transition",
-                  paymentMethod === "ewallet"
-                    ? "border-[var(--brand-green)] bg-[var(--brand-green-soft)]"
-                    : "border-black/10 bg-white",
-                )}
-              >
-                <Smartphone className="mb-2 h-5 w-5 text-[#E07A5F]" />
-                <p className="font-semibold">E-Wallet</p>
-                <p className="text-xs text-[var(--ink-muted)]">Pay digitally</p>
-              </button>
+                icon={Smartphone}
+                label="E-Wallet"
+                hint="Pay digitally"
+              />
             )}
           </div>
         </section>
 
         {paymentMethod === "cash" && (
-          <section className="rounded-3xl bg-white p-4 shadow-sm">
+          <section className="rounded-card bg-white p-4 shadow-card">
             <h2 className="text-sm font-semibold text-[var(--ink)]">
               Will you pay the exact amount?
             </h2>
@@ -391,7 +375,7 @@ export function CheckoutClient() {
         )}
 
         {paymentMethod === "ewallet" && !requiresIdVerification && (
-          <section className="rounded-3xl bg-white p-4 shadow-sm">
+          <section className="rounded-card bg-white p-4 shadow-card">
             <h2 className="text-sm font-semibold text-[var(--ink)]">
               E-Wallet payment
             </h2>
@@ -406,31 +390,26 @@ export function CheckoutClient() {
         )}
 
         {error && (
-          <p className="rounded-2xl bg-[#FDE8E8] px-4 py-3 text-sm text-[#B42318]">
+          <p className="rounded-2xl bg-danger-bg px-4 py-3 text-sm text-danger-text">
             {error}
           </p>
         )}
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <Button
-          fullWidth
-          disabled={!canSubmit || submitting}
-          onClick={placeOrder}
-          className="mx-auto flex max-w-lg justify-between !rounded-full px-5 py-3.5"
-        >
-          <span>
-            {paymentMethod
-              ? submitting
-                ? "Placing order…"
-                : "Place Order"
-              : requiresIdVerification
-                ? "Select cash payment option"
-                : "Select a payment method"}
-          </span>
-          <span>{formatPeso(orderTotal)}</span>
-        </Button>
-      </div>
+      <StickyActionBar
+        onClick={placeOrder}
+        disabled={!canSubmit || submitting}
+        left={
+          paymentMethod
+            ? submitting
+              ? "Placing order…"
+              : "Place Order"
+            : requiresIdVerification
+              ? "Select cash payment option"
+              : "Select a payment method"
+        }
+        right={formatPeso(orderTotal)}
+      />
     </div>
   );
 }

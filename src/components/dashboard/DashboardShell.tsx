@@ -15,8 +15,11 @@ import {
   LogOut,
   ExternalLink,
   Users,
+  ShoppingCart,
+  Menu,
 } from "lucide-react";
 import { BRAND } from "@/data/catalog";
+import { IconButton } from "@/components/ui/IconButton";
 import { getSession, logout } from "@/lib/auth";
 import { cn } from "@/lib/format";
 import type { Session, UserRole } from "@/types/auth";
@@ -29,21 +32,20 @@ type NavItem = {
 };
 
 const STAFF_NAV: NavItem[] = [
-  { href: "/staff", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/staff/pos", label: "New Order", icon: ShoppingCart },
   { href: "/staff/orders", label: "Orders", icon: ClipboardList },
-  { href: "/staff/products", label: "Products", icon: Package },
-  { href: "/staff/inventory", label: "Inventory Management", icon: Warehouse },
-  { href: "/staff/sales", label: "Sales", icon: Tag },
-  { href: "/staff/order-history", label: "Order History", icon: History },
-  { href: "/staff/reports", label: "Reports", icon: BarChart3 },
-  { href: "/staff/settings", label: "Settings", icon: Settings },
+  { href: "/staff/order-history", label: "Transactions", icon: History },
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { href: "/admin/pos", label: "New Order", icon: ShoppingCart },
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/staff-management", label: "Staff Management", icon: Users },
-  { href: "/admin/order-history", label: "Order History", icon: History },
+  { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/inventory", label: "Inventory Management", icon: Warehouse },
+  { href: "/admin/sales", label: "Sales", icon: Tag },
+  { href: "/admin/order-history", label: "Transactions", icon: History },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -64,6 +66,7 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSessionState] = useState<Session | null>(null);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     const current = getSession();
@@ -74,6 +77,10 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
     setSessionState(current);
   }, [role, router]);
 
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
   if (!session) {
     return (
       <div className="flex min-h-dvh items-center justify-center hero-gradient">
@@ -83,11 +90,25 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
   }
 
   const nav = role === "admin" ? ADMIN_NAV : STAFF_NAV;
-  const subtitle = role === "admin" ? "Admin Dashboard" : "Staff Dashboard";
+  const subtitle = role === "admin" ? "Admin Dashboard" : "Cashier";
 
   return (
     <div className="flex min-h-dvh hero-gradient">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-[var(--sidebar)] text-white lg:w-60">
+      {navOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+        />
+      )}
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex w-56 -translate-x-full flex-col bg-[var(--sidebar)] text-white transition-transform lg:w-60 lg:translate-x-0",
+          navOpen && "translate-x-0",
+        )}
+      >
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
@@ -150,19 +171,27 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         </div>
       </aside>
 
-      <div className="flex min-h-dvh flex-1 flex-col pl-56 lg:pl-60">
-        <header className="sticky top-0 z-20 border-b border-black/5 bg-[var(--cream)]/90 px-6 py-4 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <p className="font-display text-sm font-semibold text-[var(--ink)]">
-              Picolé Operations
-            </p>
+      <div className="flex min-h-dvh flex-1 flex-col lg:pl-60">
+        <header className="sticky top-0 z-20 border-b border-black/5 bg-[var(--cream)]/90 px-4 py-4 backdrop-blur-sm sm:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <IconButton
+                icon={Menu}
+                label="Open navigation"
+                onClick={() => setNavOpen(true)}
+                className="lg:hidden"
+              />
+              <p className="font-display text-sm font-semibold text-[var(--ink)]">
+                Picolé Operations
+              </p>
+            </div>
             <span className="rounded-full bg-[var(--sidebar-soft)] px-3 py-1 text-xs font-medium text-[var(--sidebar)]">
               {session.email}
             </span>
           </div>
         </header>
 
-        <main className="hero-gradient flex-1 px-6 py-6">{children}</main>
+        <main className="hero-gradient flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>
     </div>
   );

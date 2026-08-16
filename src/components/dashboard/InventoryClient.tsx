@@ -107,7 +107,7 @@ export function InventoryClient() {
           return (
             <div
               key={item.productId}
-              className="flex flex-wrap items-center gap-4 rounded-3xl bg-white p-4 shadow-sm"
+              className="flex flex-wrap items-center gap-4 rounded-card bg-white p-4 shadow-card"
             >
               <BrandImage
                 src={product.image}

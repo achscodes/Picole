@@ -3,10 +3,12 @@ import { cn } from "@/lib/format";
 export function Badge({
   children,
   tone = "brand",
+  casing = "upper",
   className,
 }: {
   children: React.ReactNode;
   tone?: "brand" | "warm" | "muted" | "success" | "danger";
+  casing?: "upper" | "normal";
   className?: string;
 }) {
   const tones = {
@@ -15,13 +17,14 @@ export function Badge({
     warm: "bg-[#FFF1C2] text-[#8A5A00]",
     muted: "bg-[var(--ink)]/5 text-[var(--ink-muted)]",
     success: "bg-[#E7F8EF] text-[#067647]",
-    danger: "bg-[#FDE8E8] text-[#B42318]",
+    danger: "bg-danger-bg text-danger-text",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide",
+        casing === "upper" ? "uppercase" : "normal-case",
         tones[tone],
         className,
       )}

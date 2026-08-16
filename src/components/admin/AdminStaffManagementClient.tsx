@@ -3,16 +3,16 @@
 import { useEffect, useState } from "react";
 import { Check, X, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { FilterPill } from "@/components/ui/FilterPill";
 import {
   deleteStaffAccount,
   listStaffAccounts,
   updateStaffStatus,
 } from "@/lib/auth";
 import type { StaffAccount, StaffStatus } from "@/types/auth";
-import { cn } from "@/lib/format";
 
 const TABS: Array<{ key: StaffStatus | "all"; label: string }> = [
   { key: "pending", label: "Pending" },
@@ -42,19 +42,13 @@ export function AdminStaffManagementClient() {
 
       <div className="mb-6 flex flex-wrap gap-2">
         {TABS.map((t) => (
-          <button
+          <FilterPill
             key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition",
-              tab === t.key
-                ? "bg-[var(--brand-green)] text-white"
-                : "border border-black/10 bg-white text-[var(--ink)]",
-            )}
+            active={tab === t.key}
+            onSelect={() => setTab(t.key)}
           >
             {t.label}
-          </button>
+          </FilterPill>
         ))}
       </div>
 
@@ -72,7 +66,7 @@ export function AdminStaffManagementClient() {
           staff.map((account) => (
             <article
               key={account.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white p-5 shadow-sm"
+              className="flex flex-wrap items-center justify-between gap-4 rounded-card bg-white p-5 shadow-card"
             >
               <div>
                 <p className="text-lg font-bold text-[var(--ink)]">

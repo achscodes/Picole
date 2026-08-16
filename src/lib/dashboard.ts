@@ -36,6 +36,13 @@ export function formatChartDate(iso: string) {
   });
 }
 
+export function formatShortTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-PH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function getOrdersByStatus(orders: Order[], status: OrderStatus) {
   return orders.filter((o) => o.orderStatus === status);
 }

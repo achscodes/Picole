@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ShoppingBag,
   Clock,
@@ -11,17 +11,14 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { EmptyState } from "@/components/dashboard/EmptyState";
-import {
-  getDashboardStats,
-  getSalesByDay,
-} from "@/lib/dashboard";
+import { SalesTrendCard } from "@/components/dashboard/SalesTrendCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getDashboardStats } from "@/lib/dashboard";
 import { formatPeso } from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
 
 export function StaffDashboardClient() {
   const [stats, setStats] = useState(getDashboardStats());
-  const salesChart = useMemo(() => getSalesByDay(7), [stats]);
 
   useEffect(() => {
     function refresh() {
@@ -31,8 +28,6 @@ export function StaffDashboardClient() {
     const id = window.setInterval(refresh, 3000);
     return () => window.clearInterval(id);
   }, []);
-
-  const maxSale = Math.max(...salesChart.map((d) => d.amount), 1);
 
   return (
     <>
@@ -54,30 +49,9 @@ export function StaffDashboardClient() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <h2 className="font-display text-base font-bold text-[var(--ink)]">
-            Sales — last 7 days
-          </h2>
-          <div className="mt-6 flex h-48 items-end gap-2">
-            {salesChart.map((day) => (
-              <div key={day.date} className="flex flex-1 flex-col items-center gap-2">
-                <div className="relative flex w-full flex-1 items-end">
-                  <div
-                    className="w-full rounded-t-lg bg-[var(--brand-green)]/80"
-                    style={{
-                      height: `${Math.max(4, (day.amount / maxSale) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] text-[var(--ink-muted)]">
-                  {day.label.replace(", 2026", "").replace(" 2026", "")}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SalesTrendCard days={7} />
 
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
+        <div className="rounded-card bg-white p-5 shadow-card">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-base font-bold text-[var(--ink)]">
               Active Queue

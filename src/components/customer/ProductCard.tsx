@@ -5,21 +5,50 @@ import type { Product } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { BrandImage } from "@/components/ui/BrandImage";
 import { Button } from "@/components/ui/Button";
-import { formatPeso } from "@/lib/format";
+import { cn, formatPeso } from "@/lib/format";
 import { useCart } from "@/lib/cart-context";
 
 export function ProductCard({
   product,
   onOpen,
+  variant = "grid",
 }: {
   product: Product;
   onOpen: (product: Product) => void;
+  /** "grid" is the full menu card; "compact" is a horizontal thumb card for carousels. */
+  variant?: "grid" | "compact";
 }) {
   const { addItem, isAvailable } = useCart();
   const available = isAvailable(product.id);
 
+  if (variant === "compact") {
+    return (
+      <button
+        type="button"
+        onClick={() => onOpen(product)}
+        className="flex min-w-[220px] items-center gap-3 rounded-card bg-white p-3 text-left shadow-card transition active:scale-[0.98] lg:min-w-0"
+      >
+        <BrandImage
+          src={product.image}
+          alt={product.name}
+          variant="thumb"
+          className={cn("h-14 w-14 shrink-0", !available && "opacity-60 grayscale")}
+          sizes="56px"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-[var(--ink)]">
+            {product.name}
+          </p>
+          <p className="text-sm font-bold text-[var(--brand-green)]">
+            {available ? formatPeso(product.price) : "Sold Out"}
+          </p>
+        </div>
+      </button>
+    );
+  }
+
   return (
-    <article className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_24px_rgba(26,46,26,0.06)]">
+    <article className="overflow-hidden rounded-card bg-white shadow-card">
       <button
         type="button"
         onClick={() => onOpen(product)}
@@ -50,10 +79,10 @@ export function ProductCard({
 
       <div className="space-y-3 p-3.5">
         <div>
-          <h3 className="text-[15px] font-bold leading-snug text-[var(--ink)]">
+          <h3 className="line-clamp-2 min-h-[2.625rem] text-[15px] font-bold leading-snug text-[var(--ink)]">
             {product.name}
           </h3>
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-[var(--ink-muted)]">
             {product.description}
           </p>
         </div>
@@ -63,8 +92,8 @@ export function ProductCard({
             {formatPeso(product.price)}
           </p>
           <Button
+            size="sm"
             disabled={!available}
-            className="!px-3.5 !py-2 text-xs"
             onClick={() => addItem(product.id, 1)}
             aria-label={`Add ${product.name}`}
           >

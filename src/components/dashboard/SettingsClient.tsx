@@ -24,7 +24,7 @@ export function SettingsClient() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl bg-white p-6 shadow-sm">
+        <div className="rounded-card bg-white p-6 shadow-card">
           <div className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-[var(--brand-green)]" />
             <h2 className="font-display text-base font-bold text-[var(--ink)]">
@@ -69,7 +69,7 @@ export function SettingsClient() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
+          <div className="rounded-card bg-white p-6 shadow-card">
             <h2 className="font-display text-base font-bold text-[var(--ink)]">
               Stall Details
             </h2>
@@ -90,7 +90,7 @@ export function SettingsClient() {
             </dl>
           </div>
 
-          <div className="rounded-3xl bg-[var(--brand-green-soft)] p-6">
+          <div className="rounded-card bg-[var(--brand-green-soft)] p-6">
             <h2 className="font-display text-base font-bold text-[var(--brand-green-dark)]">
               Demo Admin Access
             </h2>
@@ -103,7 +103,7 @@ export function SettingsClient() {
             </p>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
+          <div className="rounded-card bg-white p-6 shadow-card">
             <h2 className="font-display text-base font-bold text-[var(--ink)]">
               Data
             </h2>

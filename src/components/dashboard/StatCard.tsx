@@ -12,7 +12,7 @@ export function StatCard({ label, value, icon: Icon, className }: StatCardProps)
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white p-4 shadow-sm",
+        "rounded-card bg-white p-4 shadow-card",
         className,
       )}
     >

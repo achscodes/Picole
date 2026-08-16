@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PartyPopper } from "lucide-react";
 import { CustomerHeader } from "@/components/customer/CustomerHeader";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getOrderById } from "@/lib/orders";
 import { formatPeso } from "@/lib/format";
 import type { Order } from "@/types";
@@ -20,11 +21,15 @@ export function ConfirmationClient({ orderId }: { orderId: string }) {
     return (
       <div className="min-h-dvh bg-[var(--cream)]">
         <CustomerHeader />
-        <main className="mx-auto max-w-lg px-4 py-10 text-center">
-          <p className="text-sm text-[var(--ink-muted)]">Order not found.</p>
-          <Link href="/" className="mt-4 inline-block">
-            <Button>Back to Menu</Button>
-          </Link>
+        <main className="mx-auto max-w-lg px-4 py-10">
+          <EmptyState
+            title="Order not found"
+            action={
+              <Link href="/" className="inline-block">
+                <Button>Back to Menu</Button>
+              </Link>
+            }
+          />
         </main>
       </div>
     );
@@ -34,7 +39,7 @@ export function ConfirmationClient({ orderId }: { orderId: string }) {
     <div className="min-h-dvh bg-[var(--cream)]">
       <CustomerHeader active="order" />
       <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
-        <section className="rounded-3xl bg-white p-6 text-center shadow-sm">
+        <section className="rounded-card bg-white p-6 text-center shadow-card">
           <PartyPopper className="mx-auto h-8 w-8 text-[var(--brand-green)]" />
           <h1 className="mt-3 text-2xl font-bold text-[var(--ink)]">
             Order Confirmed!
@@ -50,7 +55,7 @@ export function ConfirmationClient({ orderId }: { orderId: string }) {
           </p>
         </section>
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-card bg-white p-4 shadow-card">
           <h2 className="font-semibold text-[var(--ink)]">Order details</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {order.items.map((item) => (
@@ -71,7 +76,7 @@ export function ConfirmationClient({ orderId }: { orderId: string }) {
                     Subtotal:{" "}
                     <strong>{formatPeso(order.subtotalBeforeDiscount ?? order.totalAmount)}</strong>
                   </p>
-                  <p className="text-[var(--sidebar)]">
+                  <p className="text-[var(--brand-green-dark)]">
                     {order.customerType === "pwd" ? "PWD" : "Senior Citizen"}{" "}
                     discount ({formatPeso(order.discountAmount)}) pending staff
                     ID verification at the stall.
