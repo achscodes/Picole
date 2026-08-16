@@ -47,6 +47,7 @@ Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to 
   Analytics, Staff Management, Settings)
 - Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory)
 - Admin Demo Login: Email: admin@picole.com Pass: admin123
+- Staff Demo Login: Email: staff@picole.com Pass: staff123
 
 ## Brand assets
 

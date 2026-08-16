@@ -181,6 +181,16 @@ export function LoginClient() {
             </Button>
           </form>
         )}
+
+        <div className="mt-6 rounded-2xl bg-[var(--brand-green-soft)] px-4 py-3 text-xs text-[var(--brand-green-dark)]">
+          <p className="font-semibold">Demo accounts</p>
+          <p className="mt-1">
+            Admin · <strong>admin@picole.com</strong> / <strong>admin123</strong>
+          </p>
+          <p>
+            Staff · <strong>staff@picole.com</strong> / <strong>staff123</strong>
+          </p>
+        </div>
       </div>
     </div>
   );

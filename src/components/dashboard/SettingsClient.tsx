@@ -39,11 +39,15 @@ export function SettingsClient() {
 
         <div className="rounded-card bg-[var(--brand-green-soft)] p-6">
           <h2 className="font-display text-base font-bold text-[var(--brand-green-dark)]">
-            Demo Admin Access
+            Demo Access
           </h2>
           <p className="mt-2 text-sm text-[var(--brand-green-dark)]">
-            Email <strong>admin@picole.com</strong> · Password{" "}
+            Admin · Email <strong>admin@picole.com</strong> · Password{" "}
             <strong>admin123</strong>
+          </p>
+          <p className="mt-1 text-sm text-[var(--brand-green-dark)]">
+            Staff · Email <strong>staff@picole.com</strong> · Password{" "}
+            <strong>staff123</strong>
           </p>
           <p className="mt-1 text-xs text-[var(--brand-green-dark)]/70">
             For demonstration purposes only.

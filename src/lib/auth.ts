@@ -10,6 +10,13 @@ const DEMO_ADMIN = {
   name: "Admin",
 };
 
+const DEMO_STAFF = {
+  id: "staff-demo",
+  email: "staff@picole.com",
+  password: "staff123",
+  name: "Staff",
+};
+
 function canUseStorage() {
   return typeof window !== "undefined";
 }
@@ -82,6 +89,20 @@ export function login(
     return { ok: true, session };
   }
 
+  if (
+    normalized === DEMO_STAFF.email &&
+    password === DEMO_STAFF.password
+  ) {
+    const session: Session = {
+      userId: DEMO_STAFF.id,
+      email: DEMO_STAFF.email,
+      role: "staff",
+      name: DEMO_STAFF.name,
+    };
+    setSession(session);
+    return { ok: true, session };
+  }
+
   const staff = readStaff().find((s) => s.email === normalized);
   if (!staff || staff.password !== password) {
     return { ok: false, error: "Invalid email or password." };
@@ -115,7 +136,10 @@ export function registerStaff(
   if (!normalized || !password || !name.trim()) {
     return { ok: false, error: "All fields are required." };
   }
-  if (normalized === DEMO_ADMIN.email) {
+  if (
+    normalized === DEMO_ADMIN.email ||
+    normalized === DEMO_STAFF.email
+  ) {
     return { ok: false, error: "This email is already registered." };
   }
 
