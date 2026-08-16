@@ -43,10 +43,9 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to `/login`.
 
 - Login: `/login`
-- Admin dashboard: `/admin` (Dashboard, POS, Transactions, Products, Availability,
-  Inventory, Sales, Analytics, Staff Management, Settings)
-- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Availability,
-  Inventory)
+- Admin dashboard: `/admin` (Dashboard, POS, Transactions, Products, Inventory, Sales,
+  Analytics, Staff Management, Settings)
+- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory)
 - Admin Demo Login: Email: admin@picole.com Pass: admin123
 
 ## Brand assets

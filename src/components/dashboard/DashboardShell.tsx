@@ -8,7 +8,6 @@ import {
   Package,
   Warehouse,
   Tag,
-  ToggleLeft,
   History,
   BarChart3,
   Settings,
@@ -35,7 +34,6 @@ const STAFF_NAV: NavItem[] = [
   { href: "/staff/pos", label: "POS", icon: ShoppingCart },
   { href: "/staff/transactions", label: "Transactions", icon: History },
   { href: "/staff/products", label: "Products", icon: Package },
-  { href: "/staff/availability", label: "Availability", icon: ToggleLeft },
   { href: "/staff/inventory", label: "Inventory", icon: Warehouse },
 ];
 
@@ -44,7 +42,6 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/pos", label: "POS", icon: ShoppingCart },
   { href: "/admin/transactions", label: "Transactions", icon: History },
   { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/availability", label: "Availability", icon: ToggleLeft },
   { href: "/admin/inventory", label: "Inventory", icon: Warehouse },
   { href: "/admin/sales", label: "Sales", icon: Tag },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },

@@ -6,12 +6,11 @@ const STAFF_ALLOWED_PATHS = [
   "/staff/pos",
   "/staff/transactions",
   "/staff/products",
-  "/staff/availability",
   "/staff/inventory",
 ];
 
 const RETIRED_CUSTOMER_PATHS = ["/cart", "/checkout", "/order", "/confirmation"];
-const RETIRED_ADMIN_PATHS = ["/admin/orders", "/staff/orders"];
+const RETIRED_ADMIN_PATHS = ["/admin/orders", "/staff/orders", "/admin/availability"];
 const RETIRED_INVENTORY_ROLE_PATHS = ["/inventory"];
 
 function roleHomePath(role: string | undefined) {
