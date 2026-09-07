@@ -38,6 +38,7 @@ const STAFF_NAV: NavItem[] = [
   { href: "/staff/transactions", label: "Transactions", icon: History },
   { href: "/staff/products", label: "Products", icon: Package },
   { href: "/staff/inventory", label: "Inventory", icon: Warehouse },
+  { href: "/staff/sales", label: "Sales", icon: Tag },
 ];
 
 const ADMIN_NAV: NavItem[] = [

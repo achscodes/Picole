@@ -8,6 +8,7 @@ const STAFF_ALLOWED_PATHS = [
   "/staff/transactions",
   "/staff/products",
   "/staff/inventory",
+  "/staff/sales",
 ];
 
 const RETIRED_CUSTOMER_PATHS = ["/cart", "/checkout", "/order", "/confirmation"];

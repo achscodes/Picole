@@ -67,7 +67,7 @@ Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to 
 - Login: `/login`
 - Admin dashboard: `/admin` (Dashboard, POS, Transactions, Products, Inventory, Sales,
   Analytics, Staff Management, Settings)
-- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory)
+- Staff/Cashier dashboard: `/staff` (Dashboard, POS, Transactions, Products, Inventory, Sales)
 
 ## Brand assets
 
