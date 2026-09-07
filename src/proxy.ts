@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/proxy";
 
 const STAFF_ALLOWED_PATHS = [
   "/staff",
@@ -19,12 +20,11 @@ function roleHomePath(role: string | undefined) {
   return "/login";
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  const { response, role } = await updateSession(request);
   const { pathname } = request.nextUrl;
-  const role = request.cookies.get("picole_role")?.value;
 
   if (
-    pathname === "/" ||
     RETIRED_CUSTOMER_PATHS.some(
       (path) => pathname === path || pathname.startsWith(`${path}/`),
     ) ||
@@ -42,14 +42,14 @@ export function proxy(request: NextRequest) {
     if (role === "admin" || role === "staff") {
       return NextResponse.redirect(new URL(roleHomePath(role), request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (pathname.startsWith("/admin")) {
     if (role !== "admin") {
       return NextResponse.redirect(new URL(roleHomePath(role), request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (pathname.startsWith("/staff")) {
@@ -64,15 +64,14 @@ export function proxy(request: NextRequest) {
     if (!isAllowed) {
       return NextResponse.redirect(new URL("/staff", request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
-    "/",
     "/login",
     "/admin/:path*",
     "/staff/:path*",

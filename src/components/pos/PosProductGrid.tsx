@@ -8,12 +8,14 @@ export function PosProductGrid({
   products,
   isAvailable,
   isOutOfStock,
+  stockByProduct,
   quantities,
   onAdd,
 }: {
   products: Product[];
   isAvailable: (product: Product) => boolean;
   isOutOfStock?: (product: Product) => boolean;
+  stockByProduct: Record<string, number>;
   quantities: Record<string, number>;
   onAdd: (productId: string) => void;
 }) {
@@ -36,6 +38,7 @@ export function PosProductGrid({
           product={product}
           available={isAvailable(product)}
           outOfStock={isOutOfStock?.(product) ?? false}
+          stock={stockByProduct[product.id] ?? 0}
           quantityInCart={quantities[product.id] ?? 0}
           onAdd={onAdd}
         />

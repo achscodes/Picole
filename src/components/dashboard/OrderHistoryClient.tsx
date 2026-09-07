@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/Badge";
 import { PosReceipt } from "@/components/pos/PosReceipt";
 import { filterOrdersByPeriod, formatShortDate, formatShortTime } from "@/lib/dashboard";
 import { formatPeso } from "@/lib/format";
-import { listOrders } from "@/lib/orders";
 import type { Order } from "@/types";
 
 const PERIODS = ["today", "week", "month", "all"] as const;
@@ -22,15 +21,11 @@ const PERIOD_LABELS: Record<Period, string> = {
   all: "All Time",
 };
 
-export function OrderHistoryClient() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [period, setPeriod] = useState<Period>("all");
+export function OrderHistoryClient({ initialOrders }: { initialOrders: Order[] }) {
+  const orders = initialOrders;
+  const [period, setPeriod] = useState<Period>("today");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  useEffect(() => {
-    setOrders(listOrders());
-  }, []);
 
   const completed = useMemo(() => {
     const filtered = filterOrdersByPeriod(orders, period);
@@ -40,11 +35,7 @@ export function OrderHistoryClient() {
   const visibleTransactions = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return completed;
-    return completed.filter(
-      (o) =>
-        o.orderNumber.toLowerCase().includes(q) ||
-        (o.pickupName?.toLowerCase().includes(q) ?? false),
-    );
+    return completed.filter((o) => o.orderNumber.toLowerCase().includes(q));
   }, [completed, search]);
 
   return (
@@ -66,7 +57,7 @@ export function OrderHistoryClient() {
         <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink-muted)]" />
         <input
           type="search"
-          placeholder="Search by order # or name…"
+          placeholder="Search by order number…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-full border border-black/10 bg-white py-3 pl-11 pr-4 text-sm outline-none focus:border-[var(--brand-green)]"
@@ -79,17 +70,18 @@ export function OrderHistoryClient() {
             title={search ? "No matching transactions" : "No completed orders"}
             description={
               search
-                ? "Try a different order # or name."
-                : "Completed orders will appear here."
+                ? "Try a different order number."
+                : period === "today"
+                  ? "Today's completed orders will appear here."
+                  : "Completed orders will appear here."
             }
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead>
                 <tr className="border-b border-black/5 text-[11px] uppercase tracking-wide text-[var(--ink-muted)]">
                   <th className="px-5 py-4">Order</th>
-                  <th className="px-5 py-4">Customer</th>
                   <th className="px-5 py-4">Date</th>
                   <th className="px-5 py-4">Time</th>
                   <th className="px-5 py-4">Items</th>
@@ -109,9 +101,6 @@ export function OrderHistoryClient() {
                   >
                     <td className="px-5 py-4 font-medium text-[var(--ink)]">
                       {order.orderNumber}
-                    </td>
-                    <td className="px-5 py-4 text-[var(--ink-muted)]">
-                      {order.pickupName ?? "Walk-in"}
                     </td>
                     <td className="px-5 py-4 text-[var(--ink-muted)]">
                       {formatShortDate(order.createdAt)}

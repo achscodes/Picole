@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { FilterPill } from "@/components/ui/FilterPill";
-import {
-  listMovements,
-  type InventoryMovement,
-  type InventoryMovementType,
-} from "@/lib/inventory";
-import { listProducts } from "@/lib/product-store";
+import type { InventoryMovement, InventoryMovementType } from "@/lib/inventory";
 import { formatShortDate, formatShortTime } from "@/lib/dashboard";
 import { cn } from "@/lib/format";
 import type { Product } from "@/types";
@@ -47,16 +42,17 @@ const TYPE_FILTERS: Array<{ key: InventoryMovementType | "all"; label: string }>
   { key: "expired", label: "Expired" },
 ];
 
-export function InventoryHistoryClient() {
-  const [movements, setMovements] = useState<InventoryMovement[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+export function InventoryHistoryClient({
+  initialMovements,
+  initialProducts,
+}: {
+  initialMovements: InventoryMovement[];
+  initialProducts: Product[];
+}) {
+  const movements = initialMovements;
+  const products = initialProducts;
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<InventoryMovementType | "all">("all");
-
-  useEffect(() => {
-    setMovements(listMovements());
-    setProducts(listProducts());
-  }, []);
 
   function getProduct(productId: string) {
     return products.find((p) => p.id === productId);

@@ -3,27 +3,37 @@
 import { useCallback, useMemo, useState } from "react";
 import type { CartItem, Product } from "@/types";
 
-export function usePosCart(getProduct: (productId: string) => Product | undefined) {
+export function usePosCart(
+  getProduct: (productId: string) => Product | undefined,
+  getMaxQuantity: (productId: string) => number = () => Number.MAX_SAFE_INTEGER,
+) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addItem = useCallback((productId: string, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === productId);
+      const max = getMaxQuantity(productId);
       if (existing) {
         return prev.map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + quantity } : i,
+          i.productId === productId
+            ? { ...i, quantity: Math.min(i.quantity + quantity, max) }
+            : i,
         );
       }
-      return [...prev, { productId, quantity }];
+      if (max <= 0) return prev;
+      return [...prev, { productId, quantity: Math.min(quantity, max) }];
     });
-  }, []);
+  }, [getMaxQuantity]);
 
   const setQuantity = useCallback((productId: string, quantity: number) => {
     setItems((prev) => {
       if (quantity <= 0) return prev.filter((i) => i.productId !== productId);
-      return prev.map((i) => (i.productId === productId ? { ...i, quantity } : i));
+      const nextQuantity = Math.min(quantity, getMaxQuantity(productId));
+      return prev.map((i) =>
+        i.productId === productId ? { ...i, quantity: nextQuantity } : i,
+      );
     });
-  }, []);
+  }, [getMaxQuantity]);
 
   const increment = useCallback(
     (productId: string) => {

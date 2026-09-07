@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, History as HistoryIcon } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -13,11 +13,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InventoryAlerts } from "@/components/inventory/InventoryAlerts";
 import { InventoryDetailModal } from "@/components/inventory/InventoryDetailModal";
 import { getCategoryById, getFlavorCategories } from "@/data/catalog";
-import { listProducts } from "@/lib/product-store";
+import { getProducts } from "@/lib/actions/products";
+import { getInventoryList } from "@/lib/actions/inventory";
 import {
-  getInventoryOverview,
+  computeInventoryOverview,
   getStockStatus,
-  listInventory,
   type InventoryItem,
   type StockStatus,
 } from "@/lib/inventory";
@@ -42,32 +42,36 @@ const STATUS_BADGE: Record<
 
 type Row = { item: InventoryItem; product: Product; status: StockStatus };
 
-export function InventoryManagementClient({ historyHref }: { historyHref: string }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [items, setItems] = useState<InventoryItem[]>([]);
+export function InventoryManagementClient({
+  historyHref,
+  initialProducts,
+  initialItems,
+}: {
+  historyHref: string;
+  initialProducts: Product[];
+  initialItems: InventoryItem[];
+}) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [items, setItems] = useState<InventoryItem[]>(initialItems);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StockStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [managingProductId, setManagingProductId] = useState<string | null>(null);
 
-  function refresh() {
-    setProducts(listProducts());
-    setItems(listInventory());
+  async function refresh() {
+    const [nextProducts, nextItems] = await Promise.all([getProducts(), getInventoryList()]);
+    setProducts(nextProducts);
+    setItems(nextItems);
   }
-
-  useEffect(() => {
-    refresh();
-  }, []);
 
   function getProduct(productId: string) {
     return products.find((p) => p.id === productId);
   }
 
-  const overview = useMemo(
-    () => getInventoryOverview(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, products],
-  );
+  const overview = useMemo(() => {
+    const priceById = new Map(products.map((p) => [p.id, p.price]));
+    return computeInventoryOverview(items, priceById);
+  }, [items, products]);
   const categories = getFlavorCategories();
 
   const rows = useMemo(() => {

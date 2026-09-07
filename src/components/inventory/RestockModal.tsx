@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
-import { restockProduct } from "@/lib/inventory";
+import { restockProduct } from "@/lib/actions/inventory";
 import type { Product } from "@/types";
 
 export function RestockModal({
@@ -35,7 +35,7 @@ export function RestockModal({
     quantity.trim() !== "" && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
   const newStock = currentStock + (validQuantity ? parsedQuantity : 0);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validQuantity) {
       setError("Enter a quantity greater than zero.");
@@ -45,7 +45,7 @@ export function RestockModal({
       setError("A reason is required.");
       return;
     }
-    restockProduct(product.id, parsedQuantity, reason.trim());
+    await restockProduct(product.id, parsedQuantity, reason.trim());
     onSaved();
     onClose();
   }

@@ -9,6 +9,7 @@ export function PosProductCard({
   product,
   available,
   outOfStock = false,
+  stock,
   quantityInCart = 0,
   onAdd,
 }: {
@@ -16,6 +17,7 @@ export function PosProductCard({
   available: boolean;
   /** True specifically when stock has hit zero, vs. a manual "sold out" override. */
   outOfStock?: boolean;
+  stock: number;
   quantityInCart?: number;
   onAdd: (productId: string) => void;
 }) {
@@ -59,6 +61,17 @@ export function PosProductCard({
         </h3>
         <p className="text-base font-bold text-[var(--brand-green)]">
           {formatPeso(product.price)}
+        </p>
+        <p
+          className={`text-xs font-semibold ${
+            stock <= 0
+              ? "text-danger-text"
+              : stock <= 10
+                ? "text-[#9A6700]"
+                : "text-[var(--ink-muted)]"
+          }`}
+        >
+          {stock <= 0 ? "No stock remaining" : `${stock} in stock`}
         </p>
       </div>
     </button>

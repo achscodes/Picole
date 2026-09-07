@@ -15,13 +15,16 @@ import {
   Users,
   ShoppingCart,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { BRAND } from "@/data/catalog";
 import { IconButton } from "@/components/ui/IconButton";
-import { getSession, logout } from "@/lib/auth";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { logout } from "@/lib/actions/auth";
 import { cn } from "@/lib/format";
-import type { Session, UserRole } from "@/types/auth";
-import { useEffect, useState } from "react";
+import type { Session } from "@/types/auth";
+import { useState, useTransition } from "react";
 
 type NavItem = {
   href: string;
@@ -57,37 +60,19 @@ function isActive(pathname: string, href: string) {
 }
 
 type DashboardShellProps = {
-  role: UserRole;
+  session: Session;
   children: React.ReactNode;
 };
 
-export function DashboardShell({ role, children }: DashboardShellProps) {
+export function DashboardShell({ session, children }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [session, setSessionState] = useState<Session | null>(null);
   const [navOpen, setNavOpen] = useState(false);
+  const [desktopNavExpanded, setDesktopNavExpanded] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [, startTransition] = useTransition();
 
-  useEffect(() => {
-    const current = getSession();
-    if (!current || current.role !== role) {
-      router.replace("/login");
-      return;
-    }
-    setSessionState(current);
-  }, [role, router]);
-
-  useEffect(() => {
-    setNavOpen(false);
-  }, [pathname]);
-
-  if (!session) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center hero-gradient">
-        <p className="text-sm text-[var(--ink-muted)]">Loading…</p>
-      </div>
-    );
-  }
-
+  const role = session.role;
   const nav = role === "admin" ? ADMIN_NAV : STAFF_NAV;
   const subtitle = role === "admin" ? "Admin Dashboard" : "Staff";
 
@@ -104,13 +89,14 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-56 -translate-x-full flex-col bg-[var(--sidebar)] text-white transition-transform lg:w-60 lg:translate-x-0",
+          "group fixed inset-y-0 left-0 z-40 flex w-56 -translate-x-full flex-col overflow-hidden bg-[var(--sidebar)] text-white transition-[transform,width] duration-200 lg:w-20 lg:translate-x-0 lg:hover:w-60",
           navOpen && "translate-x-0",
+          desktopNavExpanded && "lg:w-60",
         )}
       >
-        <div className="border-b border-white/10 px-5 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+        <div className="border-b border-white/10 px-5 py-5 lg:px-4">
+          <div className="flex items-center gap-3 whitespace-nowrap">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
               <Image
                 src={BRAND.logo}
                 alt=""
@@ -119,7 +105,10 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
                 className="h-7 w-7 object-contain"
               />
             </div>
-            <div>
+            <div className={cn(
+              "transition-opacity duration-200",
+              !desktopNavExpanded && "lg:opacity-0 lg:group-hover:opacity-100",
+            )}>
               <p className="font-display text-sm font-bold">{BRAND.name}</p>
               <p className="text-[11px] text-white/60">{subtitle}</p>
             </div>
@@ -142,7 +131,12 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {item.label}
+                <span className={cn(
+                  "whitespace-nowrap transition-opacity duration-200",
+                  !desktopNavExpanded && "lg:opacity-0 lg:group-hover:opacity-100",
+                )}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -151,19 +145,21 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
         <div className="space-y-1 border-t border-white/10 px-3 py-4">
           <button
             type="button"
-            onClick={() => {
-              logout();
-              router.replace("/login");
-            }}
+            onClick={() => setConfirmSignOut(true)}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            <span className={cn(
+              "whitespace-nowrap transition-opacity duration-200",
+              !desktopNavExpanded && "lg:opacity-0 lg:group-hover:opacity-100",
+            )}>
+              Sign out
+            </span>
           </button>
         </div>
       </aside>
 
-      <div className="flex min-h-dvh flex-1 flex-col lg:pl-60">
+      <div className="flex min-h-dvh flex-1 flex-col lg:pl-20">
         <header className="sticky top-0 z-20 border-b border-black/5 bg-[var(--cream)]/90 px-4 py-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -172,6 +168,12 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
                 label="Open navigation"
                 onClick={() => setNavOpen(true)}
                 className="lg:hidden"
+              />
+              <IconButton
+                icon={desktopNavExpanded ? PanelLeftClose : PanelLeftOpen}
+                label={desktopNavExpanded ? "Minimize navigation" : "Keep navigation expanded"}
+                onClick={() => setDesktopNavExpanded((expanded) => !expanded)}
+                className="hidden lg:block"
               />
               <p className="font-display text-sm font-semibold text-[var(--ink)]">
                 Picolé Operations
@@ -185,6 +187,20 @@ export function DashboardShell({ role, children }: DashboardShellProps) {
 
         <main className="hero-gradient flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        title="Sign out?"
+        message="You will need to enter your credentials to access the portal again."
+        confirmLabel="Sign out"
+        onCancel={() => setConfirmSignOut(false)}
+        onConfirm={() => {
+          startTransition(async () => {
+            await logout();
+            router.replace("/login");
+          });
+        }}
+      />
     </div>
   );
 }

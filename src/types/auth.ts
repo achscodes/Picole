@@ -5,7 +5,6 @@ export type StaffStatus = "pending" | "approved" | "rejected";
 export interface StaffAccount {
   id: string;
   email: string;
-  password: string;
   name: string;
   role: "staff";
   status: StaffStatus;

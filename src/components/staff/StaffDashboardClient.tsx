@@ -7,19 +7,34 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
-import { getDashboardStats, formatShortTime } from "@/lib/dashboard";
+import { getDashboardStats } from "@/lib/actions/dashboard";
+import { formatShortTime } from "@/lib/dashboard";
 import { formatPeso } from "@/lib/format";
 
+const EMPTY_STATS = {
+  todaySales: 0,
+  todayTransactions: 0,
+  averageSale: 0,
+  productsAvailable: 0,
+  productsSoldOut: 0,
+  recentTransactions: [] as Awaited<ReturnType<typeof getDashboardStats>>["recentTransactions"],
+};
+
 export function StaffDashboardClient() {
-  const [stats, setStats] = useState(getDashboardStats());
+  const [stats, setStats] = useState(EMPTY_STATS);
 
   useEffect(() => {
-    function refresh() {
-      setStats(getDashboardStats());
+    let cancelled = false;
+    async function refresh() {
+      const next = await getDashboardStats();
+      if (!cancelled) setStats(next);
     }
     refresh();
     const id = window.setInterval(refresh, 3000);
-    return () => window.clearInterval(id);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   return (

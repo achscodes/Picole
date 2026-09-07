@@ -1,162 +1,77 @@
+import "server-only";
+
+import { createClient } from "@/lib/supabase/server";
 import type { Session, StaffAccount, StaffStatus } from "@/types/auth";
 
-const STAFF_KEY = "picole.staff.v1";
-const SESSION_KEY = "picole.session.v1";
-
-const DEMO_ADMIN = {
-  id: "admin-demo",
-  email: "admin@picole.com",
-  password: "admin123",
-  name: "Admin",
+type ProfileRow = {
+  id: string;
+  email: string;
+  name: string;
+  status: StaffStatus;
+  created_at: string;
 };
 
-function canUseStorage() {
-  return typeof window !== "undefined";
-}
-
-function readStaff(): StaffAccount[] {
-  if (!canUseStorage()) return [];
-  try {
-    const raw = localStorage.getItem(STAFF_KEY);
-    const parsed = raw ? (JSON.parse(raw) as StaffAccount[]) : [];
-    // Legacy records predate the role field, or predate the inventory-role merge — normalize to "staff".
-    return parsed.map((s) => ({ ...s, role: "staff" as const }));
-  } catch {
-    return [];
-  }
-}
-
-function writeStaff(staff: StaffAccount[]) {
-  if (!canUseStorage()) return;
-  localStorage.setItem(STAFF_KEY, JSON.stringify(staff));
-}
-
-export function getSession(): Session | null {
-  if (!canUseStorage()) return null;
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as Session) : null;
-  } catch {
-    return null;
-  }
-}
-
-const ROLE_COOKIE = "picole_role";
-
-function setRoleCookie(role: Session["role"] | null) {
-  if (!canUseStorage()) return;
-  if (role) {
-    document.cookie = `${ROLE_COOKIE}=${role}; path=/; max-age=604800; samesite=lax`;
-  } else {
-    document.cookie = `${ROLE_COOKIE}=; path=/; max-age=0`;
-  }
-}
-
-function setSession(session: Session | null) {
-  if (!canUseStorage()) return;
-  if (session) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } else {
-    localStorage.removeItem(SESSION_KEY);
-  }
-  setRoleCookie(session?.role ?? null);
-}
-
-export function login(
-  email: string,
-  password: string,
-): { ok: true; session: Session } | { ok: false; error: string } {
-  const normalized = email.trim().toLowerCase();
-
-  if (
-    normalized === DEMO_ADMIN.email &&
-    password === DEMO_ADMIN.password
-  ) {
-    const session: Session = {
-      userId: DEMO_ADMIN.id,
-      email: DEMO_ADMIN.email,
-      role: "admin",
-      name: DEMO_ADMIN.name,
-    };
-    setSession(session);
-    return { ok: true, session };
-  }
-
-  const staff = readStaff().find((s) => s.email === normalized);
-  if (!staff || staff.password !== password) {
-    return { ok: false, error: "Invalid email or password." };
-  }
-  if (staff.status === "pending") {
-    return {
-      ok: false,
-      error: "Your account is pending admin approval.",
-    };
-  }
-  if (staff.status === "rejected") {
-    return { ok: false, error: "Your account was not approved." };
-  }
-
-  const session: Session = {
-    userId: staff.id,
-    email: staff.email,
-    role: staff.role ?? "staff",
-    name: staff.name,
-  };
-  setSession(session);
-  return { ok: true, session };
-}
-
-export function registerStaff(
-  email: string,
-  password: string,
-  name: string,
-): { ok: true } | { ok: false; error: string } {
-  const normalized = email.trim().toLowerCase();
-  if (!normalized || !password || !name.trim()) {
-    return { ok: false, error: "All fields are required." };
-  }
-  if (normalized === DEMO_ADMIN.email) {
-    return { ok: false, error: "This email is already registered." };
-  }
-
-  const staff = readStaff();
-  if (staff.some((s) => s.email === normalized)) {
-    return { ok: false, error: "An account with this email already exists." };
-  }
-
-  staff.push({
-    id: crypto.randomUUID(),
-    email: normalized,
-    password,
-    name: name.trim(),
+function mapStaffRow(row: ProfileRow): StaffAccount {
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
     role: "staff",
-    status: "pending",
-    createdAt: new Date().toISOString(),
-  });
-  writeStaff(staff);
-  return { ok: true };
+    status: row.status,
+    createdAt: row.created_at,
+  };
 }
 
-export function logout() {
-  setSession(null);
+/**
+ * Resolves the caller's session from a live Supabase Auth check (never a
+ * trusted-but-unverified cookie). Returns null for a signed-out user, or for
+ * a staff account that isn't approved yet - mirrors how `login()` already
+ * refuses to sign in a pending/rejected account.
+ */
+export async function getCurrentSession(): Promise<Session | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email, name, role, status")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) return null;
+  if (profile.role === "staff" && profile.status !== "approved") return null;
+
+  return {
+    userId: user.id,
+    email: profile.email,
+    role: profile.role,
+    name: profile.name,
+  };
 }
 
-export function listStaffAccounts(status?: StaffStatus) {
-  const staff = readStaff().sort(
-    (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
-  );
-  return status ? staff.filter((s) => s.status === status) : staff;
-}
+/** Admin-only: lists staff registrations, optionally filtered by status. */
+export async function listStaffAccounts(
+  status?: StaffStatus,
+): Promise<StaffAccount[]> {
+  const session = await getCurrentSession();
+  if (!session || session.role !== "admin") {
+    throw new Error("Only admins can view staff accounts.");
+  }
 
-export function updateStaffStatus(id: string, status: StaffStatus) {
-  const staff = readStaff();
-  const idx = staff.findIndex((s) => s.id === id);
-  if (idx < 0) return null;
-  staff[idx] = { ...staff[idx], status };
-  writeStaff(staff);
-  return staff[idx];
-}
+  const supabase = await createClient();
+  let query = supabase
+    .from("profiles")
+    .select("id, email, name, status, created_at")
+    .eq("role", "staff")
+    .order("created_at", { ascending: false });
+  if (status) {
+    query = query.eq("status", status);
+  }
 
-export function deleteStaffAccount(id: string) {
-  writeStaff(readStaff().filter((s) => s.id !== id));
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(mapStaffRow);
 }

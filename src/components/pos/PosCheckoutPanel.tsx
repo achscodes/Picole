@@ -20,12 +20,12 @@ const CUSTOMER_TYPES: Array<{ id: CustomerType; label: string; hint: string }> =
   {
     id: "pwd",
     label: "PWD",
-    hint: `${PWD_SENIOR_DISCOUNT_RATE * 100}% off · ID required · cash only`,
+    hint: `${PWD_SENIOR_DISCOUNT_RATE * 100}% off · ID required`,
   },
   {
     id: "senior",
     label: "Senior Citizen",
-    hint: `${PWD_SENIOR_DISCOUNT_RATE * 100}% off · ID required · cash only`,
+    hint: `${PWD_SENIOR_DISCOUNT_RATE * 100}% off · ID required`,
   },
 ];
 
@@ -56,17 +56,14 @@ export function PosCheckoutPanel({
 
   function selectCustomerType(type: CustomerType) {
     setCustomerType(type);
-    if (needsDiscountVerification(type)) {
-      setPaymentMethod("cash");
-    }
   }
 
-  function handleComplete(details: { cashReceived?: number; discountIdNumber?: string }) {
+  async function handleComplete(details: { cashReceived?: number; discountIdNumber?: string }) {
     if (!paymentMethod) return;
     setError("");
     setSubmitting(true);
     try {
-      const order = completePosSale({
+      const order = await completePosSale({
         cart: cart.items,
         paymentMethod,
         pickupName: customerName,
@@ -182,26 +179,19 @@ export function PosCheckoutPanel({
           <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-muted)]">
             Payment Method
           </h3>
-          <div
-            className={cn(
-              "mt-2 grid gap-2",
-              requiresIdVerification ? "grid-cols-1" : "grid-cols-2",
-            )}
-          >
+          <div className="mt-2 grid grid-cols-2 gap-2">
             <SelectableChip
               selected={paymentMethod === "cash"}
               onSelect={() => setPaymentMethod("cash")}
               icon={Banknote}
               label="Cash"
             />
-            {!requiresIdVerification && (
-              <SelectableChip
-                selected={paymentMethod === "ewallet"}
-                onSelect={() => setPaymentMethod("ewallet")}
-                icon={Smartphone}
-                label="E-Wallet"
-              />
-            )}
+            <SelectableChip
+              selected={paymentMethod === "ewallet"}
+              onSelect={() => setPaymentMethod("ewallet")}
+              icon={Smartphone}
+              label="QR / E-Wallet"
+            />
           </div>
         </section>
 
@@ -215,9 +205,10 @@ export function PosCheckoutPanel({
         )}
         {paymentMethod === "ewallet" && (
           <PosPaymentEwallet
-            totalDue={cart.subtotal}
+            totalDue={cart.subtotal - discountAmount}
+            requiresIdVerification={requiresIdVerification}
             submitting={submitting}
-            onComplete={() => handleComplete({})}
+            onComplete={(discountIdNumber) => handleComplete({ discountIdNumber })}
           />
         )}
 

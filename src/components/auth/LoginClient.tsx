@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { BRAND } from "@/data/catalog";
-import { login, registerStaff } from "@/lib/auth";
+import { login, registerStaff } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/format";
 
@@ -23,32 +23,37 @@ export function LoginClient() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [, startTransition] = useTransition();
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const result = login(email, password);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    router.replace(roleHomePath(result.session.role));
+    startTransition(async () => {
+      const result = await login(email, password);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.replace(roleHomePath(result.session.role));
+    });
   }
 
   function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess("");
-    const result = registerStaff(email, password, name);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    setSuccess(
-      "Account created! An admin must approve your account before you can sign in.",
-    );
-    setTab("login");
-    setPassword("");
+    startTransition(async () => {
+      const result = await registerStaff(email, password, name);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setSuccess(
+        "Account created! An admin must approve your account before you can sign in.",
+      );
+      setTab("login");
+      setPassword("");
+    });
   }
 
   return (

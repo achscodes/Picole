@@ -1,13 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { LineChart } from "@/components/dashboard/LineChart";
-import { getSalesByDay } from "@/lib/dashboard";
+import { getSalesByDay } from "@/lib/actions/dashboard";
 
 export function SalesTrendCard({ days = 7 }: { days?: number }) {
-  const salesChart = getSalesByDay(days).map((d) => ({
-    label: d.label,
-    value: d.amount,
-  }));
+  const [salesChart, setSalesChart] = useState<Array<{ label: string; value: number }>>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      const data = await getSalesByDay(days);
+      if (!cancelled) {
+        setSalesChart(data.map((d) => ({ label: d.label, value: d.amount })));
+      }
+    }
+    refresh();
+    const id = window.setInterval(refresh, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [days]);
 
   return (
     <div className="rounded-card bg-white p-5 shadow-card">

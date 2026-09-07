@@ -8,15 +8,14 @@ import { Badge } from "@/components/ui/Badge";
 import { RestockModal } from "@/components/inventory/RestockModal";
 import { StockAdjustmentModal } from "@/components/inventory/StockAdjustmentModal";
 import {
-  getInventoryItem,
-  getStockStatus,
-  listMovements,
+  getInventoryItemAction,
+  getMovements,
   setAlertAt,
-  type InventoryMovement,
-  type InventoryMovementType,
-} from "@/lib/inventory";
+} from "@/lib/actions/inventory";
+import { getStockStatus, type InventoryMovement, type InventoryMovementType } from "@/lib/inventory";
 import { formatShortDate, formatShortTime } from "@/lib/dashboard";
 import { cn } from "@/lib/format";
+import type { InventoryItem } from "@/lib/inventory";
 import type { Product } from "@/types";
 
 const STATUS_BADGE = {
@@ -43,20 +42,24 @@ export function InventoryDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const [item, setItem] = useState(() => getInventoryItem(product.id));
+  const [item, setItem] = useState<InventoryItem | undefined>(undefined);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [thresholdInput, setThresholdInput] = useState("");
   const [openModal, setOpenModal] = useState<"restock" | "adjust" | null>(null);
 
-  function refresh() {
-    const next = getInventoryItem(product.id);
+  async function refresh() {
+    const [next, recentMovements] = await Promise.all([
+      getInventoryItemAction(product.id),
+      getMovements({ productId: product.id, limit: 5 }),
+    ]);
     setItem(next);
     if (next) setThresholdInput(String(next.alertAt));
-    setMovements(listMovements({ productId: product.id, limit: 5 }));
+    setMovements(recentMovements);
     onChanged();
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- refetches inventory detail when the viewed product changes
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
@@ -73,10 +76,10 @@ export function InventoryDetailModal({
   const status = getStockStatus(item);
   const badge = STATUS_BADGE[status];
 
-  function saveThreshold() {
+  async function saveThreshold() {
     const value = Number(thresholdInput);
     if (!Number.isFinite(value) || value < 0) return;
-    setAlertAt(product.id, value);
+    await setAlertAt(product.id, value);
     refresh();
   }
 

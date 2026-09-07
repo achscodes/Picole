@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, X, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FilterPill } from "@/components/ui/FilterPill";
-import { deleteStaffAccount, listStaffAccounts, updateStaffStatus } from "@/lib/auth";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
+import { deleteStaffAccount, updateStaffStatus } from "@/lib/actions/staff";
 import type { StaffAccount, StaffStatus } from "@/types/auth";
 
 const TABS: Array<{ key: StaffStatus | "all"; label: string }> = [
@@ -17,17 +20,21 @@ const TABS: Array<{ key: StaffStatus | "all"; label: string }> = [
   { key: "all", label: "All" },
 ];
 
-export function AdminStaffManagementClient() {
-  const [staff, setStaff] = useState<StaffAccount[]>([]);
+export function AdminStaffManagementClient({
+  initialStaff,
+}: {
+  initialStaff: StaffAccount[];
+}) {
+  const router = useRouter();
   const [tab, setTab] = useState<StaffStatus | "all">("pending");
+  const [accountToDelete, setAccountToDelete] = useState<StaffAccount | null>(null);
+  const { showToast } = useToast();
+  const [, startTransition] = useTransition();
 
-  function refresh() {
-    setStaff(listStaffAccounts(tab === "all" ? undefined : tab));
-  }
-
-  useEffect(() => {
-    refresh();
-  }, [tab]);
+  const filtered = useMemo(
+    () => (tab === "all" ? initialStaff : initialStaff.filter((s) => s.status === tab)),
+    [initialStaff, tab],
+  );
 
   return (
     <>
@@ -49,7 +56,7 @@ export function AdminStaffManagementClient() {
       </div>
 
       <div className="space-y-4">
-        {staff.length === 0 ? (
+        {filtered.length === 0 ? (
           <EmptyState
             title="No staff accounts"
             description={
@@ -59,7 +66,7 @@ export function AdminStaffManagementClient() {
             }
           />
         ) : (
-          staff.map((account) => (
+          filtered.map((account) => (
             <article
               key={account.id}
               className="flex flex-wrap items-center justify-between gap-4 rounded-card bg-white p-5 shadow-card"
@@ -98,8 +105,11 @@ export function AdminStaffManagementClient() {
                   <>
                     <Button
                       onClick={() => {
-                        updateStaffStatus(account.id, "approved");
-                        refresh();
+                        startTransition(async () => {
+                          await updateStaffStatus(account.id, "approved");
+                          router.refresh();
+                          showToast(`${account.name} was approved.`);
+                        });
                       }}
                     >
                       <Check className="h-4 w-4" />
@@ -108,8 +118,11 @@ export function AdminStaffManagementClient() {
                     <Button
                       variant="danger"
                       onClick={() => {
-                        updateStaffStatus(account.id, "rejected");
-                        refresh();
+                        startTransition(async () => {
+                          await updateStaffStatus(account.id, "rejected");
+                          router.refresh();
+                          showToast(`${account.name} was rejected.`);
+                        });
                       }}
                     >
                       <X className="h-4 w-4" />
@@ -120,16 +133,9 @@ export function AdminStaffManagementClient() {
 
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Remove staff account for ${account.email}?`,
-                      )
-                    ) {
-                      deleteStaffAccount(account.id);
-                      refresh();
-                    }
-                  }}
+                  aria-label={`Delete staff account for ${account.email}`}
+                  title="Delete staff account"
+                  onClick={() => setAccountToDelete(account)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -138,6 +144,26 @@ export function AdminStaffManagementClient() {
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={accountToDelete !== null}
+        title="Delete staff account?"
+        message={`This will permanently remove the account for ${accountToDelete?.email ?? "this staff member"}.`}
+        confirmLabel="Delete account"
+        tone="danger"
+        onCancel={() => setAccountToDelete(null)}
+        onConfirm={() => {
+          if (!accountToDelete) return;
+          const name = accountToDelete.name;
+          const id = accountToDelete.id;
+          setAccountToDelete(null);
+          startTransition(async () => {
+            await deleteStaffAccount(id);
+            router.refresh();
+            showToast(`${name}'s account was deleted.`);
+          });
+        }}
+      />
     </>
   );
 }

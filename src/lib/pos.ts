@@ -1,14 +1,8 @@
 import type { CartItem, CustomerType, Order, PaymentMethod, Product } from "@/types";
-import { createOrder } from "@/lib/orders";
+import { createOrder } from "@/lib/actions/orders";
 
-export function isProductAvailable(
-  product: Product,
-  overrides: Record<string, boolean>,
-  stock?: number,
-): boolean {
-  const manuallyAvailable =
-    product.id in overrides ? overrides[product.id] : product.available;
-  if (!manuallyAvailable) return false;
+export function isProductAvailable(product: Product, stock?: number): boolean {
+  if (!product.available) return false;
   if (stock !== undefined && stock <= 0) return false;
   return true;
 }
@@ -22,7 +16,7 @@ export interface PosSaleInput {
   discountIdNumber?: string;
 }
 
-export function completePosSale(input: PosSaleInput): Order {
+export function completePosSale(input: PosSaleInput): Promise<Order> {
   return createOrder({
     cart: input.cart,
     paymentMethod: input.paymentMethod,

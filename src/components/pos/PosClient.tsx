@@ -11,17 +11,16 @@ import { PosReceipt } from "@/components/pos/PosReceipt";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { usePosCart } from "@/components/pos/usePosCart";
 import { filterProductsByCategory, searchProducts } from "@/data/catalog";
-import { getAvailabilityOverrides } from "@/lib/orders";
+import { getProducts } from "@/lib/actions/products";
+import { getInventoryList } from "@/lib/actions/inventory";
 import { isProductAvailable } from "@/lib/pos";
-import { listProducts } from "@/lib/product-store";
-import { listInventory } from "@/lib/inventory";
 import type { CategoryId, Order, Product } from "@/types";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Screen = "catalog" | "checkout" | "receipt";
 
-export function PosClient() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [availability, setAvailability] = useState<Record<string, boolean>>({});
+export function PosClient({ initialProducts }: { initialProducts: Product[] }) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
   const [activeCategory, setActiveCategory] = useState<CategoryId>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,13 +28,17 @@ export function PosClient() {
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
-    function refresh() {
-      setProducts(listProducts());
-      setAvailability(getAvailabilityOverrides());
+    async function refresh() {
+      const [nextProducts, inventory] = await Promise.all([
+        getProducts(),
+        getInventoryList(),
+      ]);
+      setProducts(nextProducts);
       const stock: Record<string, number> = {};
-      for (const item of listInventory()) stock[item.productId] = item.stock;
+      for (const item of inventory) stock[item.productId] = item.stock;
       setStockByProduct(stock);
     }
     refresh();
@@ -48,12 +51,16 @@ export function PosClient() {
     [products],
   );
 
-  const cart = usePosCart(getProduct);
+  const getMaxQuantity = useCallback(
+    (productId: string) => stockByProduct[productId] ?? 0,
+    [stockByProduct],
+  );
+
+  const cart = usePosCart(getProduct, getMaxQuantity);
 
   const isAvailable = useCallback(
-    (product: Product) =>
-      isProductAvailable(product, availability, stockByProduct[product.id]),
-    [availability, stockByProduct],
+    (product: Product) => isProductAvailable(product, stockByProduct[product.id]),
+    [stockByProduct],
   );
 
   const isOutOfStock = useCallback(
@@ -69,6 +76,11 @@ export function PosClient() {
   function handleAdd(productId: string) {
     const product = getProduct(productId);
     if (!product || !isAvailable(product)) return;
+    const stock = getMaxQuantity(productId);
+    if ((cart.quantities[productId] ?? 0) >= stock) {
+      showToast(`Only ${stock} ${product.name} left in stock.`);
+      return;
+    }
     cart.addItem(productId, 1);
   }
 
@@ -124,6 +136,7 @@ export function PosClient() {
             products={visibleProducts}
             isAvailable={isAvailable}
             isOutOfStock={isOutOfStock}
+            stockByProduct={stockByProduct}
             quantities={cart.quantities}
             onAdd={handleAdd}
           />

@@ -1,6 +1,3 @@
-"use client";
-
-import { useMemo } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LineChart } from "@/components/dashboard/LineChart";
@@ -9,26 +6,25 @@ import {
   getOrdersByDay,
   getPaymentBreakdown,
   getSalesByDay,
-  sumSales,
-} from "@/lib/dashboard";
+} from "@/lib/dashboard-data";
+import { sumSales } from "@/lib/dashboard";
 import { formatPeso } from "@/lib/format";
-import { listOrders } from "@/lib/orders";
+import { listOrders } from "@/lib/orders-data";
 
-export function ReportsClient() {
-  const orders = useMemo(() => listOrders(), []);
+export async function ReportsClient() {
+  const [orders, salesByDay, ordersByDay, bestSellers, payments] = await Promise.all([
+    listOrders(),
+    getSalesByDay(14),
+    getOrdersByDay(14),
+    getBestSellers(5),
+    getPaymentBreakdown(),
+  ]);
+
   const completed = orders.filter((o) => o.orderStatus === "completed");
   const totalSales = sumSales(completed);
   const avgOrder = completed.length ? totalSales / completed.length : 0;
-  const salesChart = getSalesByDay(14).map((d) => ({
-    label: d.label,
-    value: d.amount,
-  }));
-  const ordersChart = getOrdersByDay(14).map((d) => ({
-    label: d.label,
-    value: d.count,
-  }));
-  const bestSellers = getBestSellers(5);
-  const payments = getPaymentBreakdown();
+  const salesChart = salesByDay.map((d) => ({ label: d.label, value: d.amount }));
+  const ordersChart = ordersByDay.map((d) => ({ label: d.label, value: d.count }));
 
   const paymentTotal = payments.cash + payments.ewallet || 1;
 

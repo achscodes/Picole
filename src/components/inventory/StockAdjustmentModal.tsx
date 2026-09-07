@@ -11,7 +11,7 @@ import {
   removeStock,
   restockProduct,
   setStock,
-} from "@/lib/inventory";
+} from "@/lib/actions/inventory";
 import type { Product } from "@/types";
 
 type AdjustmentType = "add" | "remove" | "set";
@@ -65,7 +65,7 @@ export function StockAdjustmentModal({
     return parsedQuantity;
   })();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validQuantity) {
       setError("Enter a valid quantity.");
@@ -78,17 +78,17 @@ export function StockAdjustmentModal({
 
     const trimmedReason = reason.trim();
     if (type === "add") {
-      restockProduct(product.id, parsedQuantity, trimmedReason);
+      await restockProduct(product.id, parsedQuantity, trimmedReason);
     } else if (type === "remove") {
       if (removalReason === "damaged") {
-        recordDamagedStock(product.id, parsedQuantity, trimmedReason);
+        await recordDamagedStock(product.id, parsedQuantity, trimmedReason);
       } else if (removalReason === "expired") {
-        recordExpiredStock(product.id, parsedQuantity, trimmedReason);
+        await recordExpiredStock(product.id, parsedQuantity, trimmedReason);
       } else {
-        removeStock(product.id, parsedQuantity, trimmedReason);
+        await removeStock(product.id, parsedQuantity, trimmedReason);
       }
     } else {
-      setStock(product.id, parsedQuantity, trimmedReason);
+      await setStock(product.id, parsedQuantity, trimmedReason);
     }
 
     onSaved();

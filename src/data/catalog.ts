@@ -4,6 +4,7 @@ const ASSET_BASE = "/Assets/Assets";
 
 export const BRAND_IMAGES = {
   logo: `${ASSET_BASE}/Picole%20Logo%20PNG.avif`,
+  hero: `${ASSET_BASE}/Healthy-Ice-Pops-Hero.avif`,
   juicy: `${ASSET_BASE}/Strawberry(with%20dalandan).avif`,
   milky: `${ASSET_BASE}/Milky.avif`,
   lite: `${ASSET_BASE}/Lite.avif`,
@@ -95,60 +96,53 @@ function product(
   return { available: true, ...partial };
 }
 
-/** Default menu — one product per flavor line (no duplicate flavor boards). */
+type FlavorDefinition = string | { name: string; bestSeller?: boolean };
+
+function flavorProducts(
+  categoryId: FlavorCategoryId,
+  price: number,
+  flavors: FlavorDefinition[],
+): Product[] {
+  const categoryName = categoryId[0].toUpperCase() + categoryId.slice(1);
+  return flavors.map((flavor) => {
+    const { name, bestSeller } =
+      typeof flavor === "string" ? { name: flavor, bestSeller: false } : flavor;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return product({
+      id: `${categoryId}-${slug}`,
+      name,
+      description: `${name} ${categoryName} Pop from Picolé.`,
+      price,
+      categoryId,
+      image: BRAND_IMAGES[categoryId],
+      bestSeller,
+    });
+  });
+}
+
+/** Complete flavor menu requested for the POS. */
 export const DEFAULT_PRODUCTS: Product[] = [
-  product({
-    id: "dip-pops",
-    name: "Dip Pops",
-    description: "Creamy dip pops coated for a richer bite.",
-    price: 75,
-    categoryId: "dip",
-    image: BRAND_IMAGES.dip,
-    bestSeller: true,
-  }),
-  product({
-    id: "lite-pops",
-    name: "Lite Pops",
-    description: "No sugar added — diabetic friendly and as low as 10 cal.",
-    price: 45,
-    categoryId: "lite",
-    image: BRAND_IMAGES.lite,
-  }),
-  product({
-    id: "premium-pops",
-    name: "Premium Pops",
-    description: "Premium pops with real nuts and indulgent flavor.",
-    price: 80,
-    categoryId: "premium",
-    image: BRAND_IMAGES.premium,
-    bestSeller: true,
-  }),
-  product({
-    id: "juicy-pops",
-    name: "Juicy Pops",
-    description: "Fruit-forward juicy pops — lactose free and refreshing.",
-    price: 50,
-    categoryId: "juicy",
-    image: BRAND_IMAGES.juicy,
-    bestSeller: true,
-    caloriesNote: "As low as 48 calories",
-  }),
-  product({
-    id: "specialty-pops",
-    name: "Specialty Pops",
-    description: "Limited specialty flavors with Picolé's signature twist.",
-    price: 75,
-    categoryId: "specialty",
-    image: BRAND_IMAGES.specialty,
-  }),
-  product({
-    id: "milky-pops",
-    name: "Milky Pops",
-    description: "Creamy milky pops with calcium and prebiotics.",
-    price: 65,
-    categoryId: "milky",
-    image: BRAND_IMAGES.milky,
-  }),
+  ...flavorProducts("dip", 75, [
+    { name: "Choco Banana", bestSeller: true }, "Cookie Overload", "Corn Supreme", "Luscious Strawberry",
+  ]),
+  ...flavorProducts("lite", 45, [
+    "Orange", "Almond Hazelnut", "Strawberry", { name: "Double Choco", bestSeller: true }, "Avocado",
+  ]),
+  ...flavorProducts("premium", 80, [
+    { name: "Pistachio", bestSeller: true }, "Choco Mint", "Berries and Dark Chocolate", { name: "Belgian Chocolate", bestSeller: true },
+  ]),
+  ...flavorProducts("juicy", 50, [
+    { name: "Strawberry", bestSeller: true }, "Lemon", "Chili Tamarind", "Buko", "Green Mango", "Lychee",
+    { name: "Mango", bestSeller: true }, "Watermelon", "Calamansi", "Buko Lychee", "Pineapple", "Dalandan",
+  ]),
+  ...flavorProducts("specialty", 75, [
+    { name: "Neopolitan", bestSeller: true }, "Banana Split", { name: "Sorbetes Trio", bestSeller: true },
+    "Orange n' Cream", "Bubblegum",
+  ]),
+  ...flavorProducts("milky", 65, [
+    { name: "Avocado", bestSeller: true }, "Ube", "Cappucino", "Chocolate", "Red Bean", "Green Tea (Matcha)",
+    "Melon", { name: "Cookie & Cream", bestSeller: true }, "Strawberry",
+  ]),
 ];
 
 export function getCategoryById(id: string) {

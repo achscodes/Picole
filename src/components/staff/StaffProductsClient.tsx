@@ -1,42 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { BrandImage } from "@/components/ui/BrandImage";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
 import { ProductFormModal } from "@/components/staff/ProductFormModal";
 import { getCategoryById } from "@/data/catalog";
-import {
-  deleteProduct,
-  listProducts,
-  saveProduct,
-} from "@/lib/product-store";
-import {
-  getAvailabilityOverrides,
-  setProductAvailability,
-} from "@/lib/orders";
+import { deleteProduct, getProducts, saveProduct } from "@/lib/actions/products";
 import { formatPeso } from "@/lib/format";
 import type { Product } from "@/types";
 
-export function StaffProductsClient() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [availability, setAvailability] = useState<Record<string, boolean>>({});
+export function StaffProductsClient({ initialProducts }: { initialProducts: Product[] }) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [editing, setEditing] = useState<Product | null | undefined>(undefined);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const { showToast } = useToast();
 
-  function refresh() {
-    setProducts(listProducts());
-    setAvailability(getAvailabilityOverrides());
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  function isAvailable(product: Product) {
-    return availability[product.id] ?? product.available;
+  async function refresh() {
+    setProducts(await getProducts());
   }
 
   return (
@@ -58,7 +44,7 @@ export function StaffProductsClient() {
             <thead>
               <tr className="border-b border-black/5 text-[11px] uppercase tracking-wide text-[var(--ink-muted)]">
                 <th className="px-5 py-4 font-semibold">Product</th>
-                <th className="px-5 py-4 font-semibold">Flavor</th>
+                <th className="px-5 py-4 font-semibold">Category</th>
                 <th className="px-5 py-4 font-semibold">Price</th>
                 <th className="px-5 py-4 font-semibold">Available</th>
                 <th className="px-5 py-4 font-semibold">Actions</th>
@@ -66,7 +52,7 @@ export function StaffProductsClient() {
             </thead>
             <tbody>
               {products.map((product) => {
-                const available = isAvailable(product);
+                const available = product.available;
                 const category = getCategoryById(product.categoryId);
                 return (
                   <tr
@@ -100,11 +86,11 @@ export function StaffProductsClient() {
                     <td className="px-5 py-4">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const next = !available;
-                          setProductAvailability(product.id, next);
-                          saveProduct({ ...product, available: next });
+                          await saveProduct({ ...product, available: next });
                           refresh();
+                          showToast(`${product.name} is now ${next ? "available" : "unavailable"}.`);
                         }}
                       >
                         <Badge tone={available ? "success" : "danger"}>
@@ -122,16 +108,7 @@ export function StaffProductsClient() {
                         <IconButton
                           icon={Trash2}
                           label="Delete product"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Remove "${product.name}" from the menu?`,
-                              )
-                            ) {
-                              deleteProduct(product.id);
-                              refresh();
-                            }
-                          }}
+                          onClick={() => setProductToDelete(product)}
                         />
                       </div>
                     </td>
@@ -147,9 +124,29 @@ export function StaffProductsClient() {
         <ProductFormModal
           product={editing}
           onClose={() => setEditing(undefined)}
-          onSaved={refresh}
+          onSaved={() => {
+            refresh();
+            showToast(editing ? "Product updated." : "Product added.");
+          }}
         />
       )}
+
+      <ConfirmDialog
+        open={productToDelete !== null}
+        title="Delete product?"
+        message={`This will remove “${productToDelete?.name ?? "this product"}” from the menu.`}
+        confirmLabel="Delete product"
+        tone="danger"
+        onCancel={() => setProductToDelete(null)}
+        onConfirm={async () => {
+          if (!productToDelete) return;
+          const name = productToDelete.name;
+          await deleteProduct(productToDelete.id);
+          setProductToDelete(null);
+          refresh();
+          showToast(`${name} was deleted.`);
+        }}
+      />
     </>
   );
 }

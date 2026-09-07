@@ -5,11 +5,8 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { getFlavorCategories } from "@/data/catalog";
-import {
-  createProduct,
-  readImageAttachment,
-  saveProduct,
-} from "@/lib/product-store";
+import { createProduct, saveProduct } from "@/lib/actions/products";
+import { readImageAttachment } from "@/lib/image";
 import { cn } from "@/lib/format";
 import type { FlavorCategoryId } from "@/data/catalog";
 import type { Product } from "@/types";
@@ -28,7 +25,6 @@ type FormState = {
   image: string;
   available: boolean;
   bestSeller: boolean;
-  isNew: boolean;
 };
 
 export function ProductFormModal({
@@ -47,7 +43,6 @@ export function ProductFormModal({
     image: product?.image ?? "",
     available: product?.available ?? true,
     bestSeller: product?.bestSeller ?? false,
-    isNew: product?.isNew ?? false,
   });
   const [error, setError] = useState("");
   const [previewName, setPreviewName] = useState<string | null>(null);
@@ -76,7 +71,7 @@ export function ProductFormModal({
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -94,13 +89,12 @@ export function ProductFormModal({
       image: form.image,
       available: form.available,
       bestSeller: form.bestSeller,
-      isNew: form.isNew,
     };
 
     if (isEdit && product) {
-      saveProduct({ ...product, ...payload });
+      await saveProduct({ ...product, ...payload });
     } else {
-      createProduct(payload);
+      await createProduct(payload);
     }
 
     onSaved();
@@ -134,7 +128,7 @@ export function ProductFormModal({
 
           <label className="block">
             <span className="text-sm font-medium text-[var(--ink-muted)]">
-              Name
+              Flavor Name
             </span>
             <input
               value={form.name}
@@ -180,7 +174,7 @@ export function ProductFormModal({
 
             <label className="block">
               <span className="text-sm font-medium text-[var(--ink-muted)]">
-                Flavor
+                Category
               </span>
               <select
                 value={form.categoryId}
@@ -235,7 +229,6 @@ export function ProductFormModal({
               [
                 ["available", "Available on menu"],
                 ["bestSeller", "Best seller"],
-                ["isNew", "New"],
               ] as const
             ).map(([key, label]) => (
               <label

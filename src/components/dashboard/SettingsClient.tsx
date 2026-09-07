@@ -1,18 +1,24 @@
 "use client";
 
+import { useState } from "react";
+
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
 import { BRAND } from "@/data/catalog";
-import { resetDemoOrders } from "@/lib/orders";
-import { resetInventory } from "@/lib/inventory";
-import { resetProductStore } from "@/lib/product-store";
+import { resetDemoData, seedDemoData } from "@/lib/actions/settings";
 
 export function SettingsClient() {
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmSeed, setConfirmSeed] = useState(false);
+  const { showToast } = useToast();
+
   return (
     <>
       <PageHeader
         title="Settings"
-        subtitle="Stall details and demo access."
+        subtitle="Stall details and sample data."
       />
 
       <div className="max-w-xl space-y-6">
@@ -37,43 +43,52 @@ export function SettingsClient() {
           </dl>
         </div>
 
-        <div className="rounded-card bg-[var(--brand-green-soft)] p-6">
-          <h2 className="font-display text-base font-bold text-[var(--brand-green-dark)]">
-            Demo Admin Access
-          </h2>
-          <p className="mt-2 text-sm text-[var(--brand-green-dark)]">
-            Email <strong>admin@picole.com</strong> · Password{" "}
-            <strong>admin123</strong>
-          </p>
-          <p className="mt-1 text-xs text-[var(--brand-green-dark)]/70">
-            For demonstration purposes only.
-          </p>
-        </div>
-
         <div className="rounded-card bg-white p-6 shadow-card">
           <h2 className="font-display text-base font-bold text-[var(--ink)]">
             Data
           </h2>
           <p className="mt-2 text-sm text-[var(--ink-muted)]">
-            Prototype data is stored on this device. Reset it to restore the
-            sample menu and orders.
+            Load 14 days of generated sample transactions to see the
+            dashboards, sales, and inventory reports populated, or reset back
+            to a clean slate.
           </p>
-          <Button
-            variant="secondary"
-            className="mt-4"
-            onClick={() => {
-              if (window.confirm("Reset all demo orders and inventory?")) {
-                resetDemoOrders();
-                resetInventory();
-                resetProductStore();
-                window.location.reload();
-              }
-            }}
-          >
-            Reset demo data
-          </Button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button variant="secondary" onClick={() => setConfirmSeed(true)}>
+              Load sample data
+            </Button>
+            <Button variant="secondary" onClick={() => setConfirmReset(true)}>
+              Reset demo data
+            </Button>
+          </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmSeed}
+        title="Load sample data?"
+        message="This will replace current orders and inventory history with 14 days of generated sample transactions."
+        confirmLabel="Load sample data"
+        onCancel={() => setConfirmSeed(false)}
+        onConfirm={async () => {
+          setConfirmSeed(false);
+          await seedDemoData();
+          showToast("Sample data loaded.");
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset demo data?"
+        message="This will permanently clear all orders and inventory history, and reset every product's stock."
+        confirmLabel="Reset data"
+        tone="danger"
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={async () => {
+          setConfirmReset(false);
+          await resetDemoData();
+          showToast("Demo data was reset.");
+        }}
+      />
     </>
   );
 }
