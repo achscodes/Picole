@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FilterPill } from "@/components/ui/FilterPill";
+import { LastUpdatedNote } from "@/components/ui/LastUpdatedNote";
 import { LineChart } from "@/components/dashboard/LineChart";
 import { filterOrdersByPeriod, formatChartDate } from "@/lib/dashboard";
 import { getCategoryById } from "@/data/catalog";
 import { formatPeso } from "@/lib/format";
 import { getOrders } from "@/lib/actions/orders";
+import { usePolledAction } from "@/hooks/usePolledAction";
 import type { Order, Product } from "@/types";
 
 const PERIODS = ["today", "week", "month", "all"] as const;
@@ -30,16 +32,16 @@ export function SalesClient({
   initialOrders: Order[];
   initialProducts: Product[];
 }) {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [period, setPeriod] = useState<Period>("today");
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      getOrders().then(setOrders);
-    }, 3000);
-    return () => window.clearInterval(id);
-  }, []);
+  const {
+    data: orders,
+    isStale,
+    lastUpdatedAt,
+  } = usePolledAction(getOrders, {
+    cacheKey: "sales-orders",
+    initialData: initialOrders,
+  });
 
   const filtered = useMemo(
     () => filterOrdersByPeriod(orders, period),
@@ -131,6 +133,7 @@ export function SalesClient({
         title="Sales"
         subtitle="Recorded sales per period."
       />
+      <LastUpdatedNote lastUpdatedAt={lastUpdatedAt} isStale={isStale} className="-mt-4 mb-4 text-xs text-[var(--ink-muted)]" />
 
       <div className="mb-6 flex flex-wrap gap-2">
         {PERIODS.map((p) => (

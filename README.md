@@ -47,7 +47,7 @@ The app is backed by Supabase (Postgres). To stand up a fresh environment:
    your project's **Settings → API** page (`NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 3. In the Supabase SQL Editor, run every file under `supabase/migrations/` **in
-   numeric order** (`0001_...` through `0008_...`). This creates the schema,
+   numeric order** (`0001_...` through `0009_...`). This creates the schema,
    RLS policies, and seeds the default flavor menu from `src/data/catalog.ts`.
 4. Provision the first admin:
    - Dashboard → Authentication → add a user with a real email/password.

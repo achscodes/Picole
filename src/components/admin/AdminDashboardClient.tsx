@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { ShoppingBag, Wallet, Receipt, Package } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SalesTrendCard } from "@/components/dashboard/SalesTrendCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import { LastUpdatedNote } from "@/components/ui/LastUpdatedNote";
 import { getDashboardStats, getPendingStaffSummary } from "@/lib/actions/dashboard";
 import { formatPeso } from "@/lib/format";
+import { usePolledAction } from "@/hooks/usePolledAction";
 import type { StaffAccount } from "@/types/auth";
 
 const EMPTY_STATS = {
@@ -21,32 +22,25 @@ const EMPTY_STATS = {
   recentTransactions: [] as Awaited<ReturnType<typeof getDashboardStats>>["recentTransactions"],
 };
 
-export function AdminDashboardClient() {
-  const [stats, setStats] = useState(EMPTY_STATS);
-  const [pendingStaff, setPendingStaff] = useState<{
-    count: number;
-    preview: StaffAccount[];
-  }>({ count: 0, preview: [] });
+const EMPTY_PENDING_STAFF: { count: number; preview: StaffAccount[] } = {
+  count: 0,
+  preview: [],
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      const [nextStats, nextPending] = await Promise.all([
-        getDashboardStats(),
-        getPendingStaffSummary(),
-      ]);
-      if (!cancelled) {
-        setStats(nextStats);
-        setPendingStaff(nextPending);
-      }
-    }
-    refresh();
-    const id = window.setInterval(refresh, 3000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, []);
+async function fetchAdminOverview() {
+  const [stats, pendingStaff] = await Promise.all([
+    getDashboardStats(),
+    getPendingStaffSummary(),
+  ]);
+  return { stats, pendingStaff };
+}
+
+export function AdminDashboardClient() {
+  const { data, isStale, lastUpdatedAt } = usePolledAction(fetchAdminOverview, {
+    cacheKey: "admin-dashboard-overview",
+    initialData: { stats: EMPTY_STATS, pendingStaff: EMPTY_PENDING_STAFF },
+  });
+  const { stats, pendingStaff } = data;
 
   return (
     <>
@@ -54,6 +48,7 @@ export function AdminDashboardClient() {
         title="Dashboard"
         subtitle="Today's overview of stall operations."
       />
+      <LastUpdatedNote lastUpdatedAt={lastUpdatedAt} isStale={isStale} className="-mt-4 mb-4 text-xs text-[var(--ink-muted)]" />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

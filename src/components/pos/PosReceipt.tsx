@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { PartyPopper, Printer } from "lucide-react";
+import { CloudUpload, PartyPopper, Printer } from "lucide-react";
 import type { Order } from "@/types";
 import { BRAND } from "@/data/catalog";
 import { Button } from "@/components/ui/Button";
@@ -9,10 +9,15 @@ import { formatPeso } from "@/lib/format";
 
 export function PosReceipt({
   order,
+  queued,
   onNewOrder,
   onClose,
 }: {
   order: Order;
+  /** True when this sale couldn't reach the server and was queued locally
+   * instead (src/lib/offline/sync-engine.ts) - it'll sync automatically once
+   * connectivity returns. The transaction number shown is provisional. */
+  queued?: boolean;
   onNewOrder?: () => void;
   onClose?: () => void;
 }) {
@@ -49,6 +54,16 @@ export function PosReceipt({
             Sale Completed
           </p>
         </div>
+
+        {queued && (
+          <div className="mt-4 flex items-start gap-2 rounded-2xl bg-[var(--sidebar-soft)] px-4 py-3 text-sm text-[var(--sidebar)] print:hidden">
+            <CloudUpload className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              You&apos;re offline right now - this sale is recorded and will sync
+              automatically once you&apos;re back online.
+            </span>
+          </div>
+        )}
 
         <div className="mt-4 space-y-1 border-y border-dashed border-black/15 py-3 text-sm">
           <div className="flex justify-between">

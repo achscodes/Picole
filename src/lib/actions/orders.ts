@@ -20,12 +20,32 @@ export interface CreateOrderInput {
   ewalletProvider?: string;
   customerType?: CustomerType;
   discountIdNumber?: string;
+  /** Client-generated UUID, reused across retries of the same checkout
+   * attempt, so a slow-connection double-submit or an offline-queue replay
+   * can never create a duplicate order - see 0009_pos_order_idempotency.sql. */
+  clientOrderId?: string;
 }
 
 async function requireStaff() {
   const session = await getCurrentSession();
   if (!session) throw new Error("You must be signed in to record a sale.");
   return session;
+}
+
+function rpcArgs(input: CreateOrderInput) {
+  return {
+    p_items: input.cart.map((item) => ({
+      product_id: item.productId,
+      quantity: item.quantity,
+    })),
+    p_payment_method: input.paymentMethod,
+    p_pickup_name: input.pickupName ?? null,
+    p_cash_received: input.cashReceived ?? null,
+    p_ewallet_provider: input.ewalletProvider ?? null,
+    p_customer_type: input.customerType ?? "regular",
+    p_discount_id_number: input.discountIdNumber ?? null,
+    p_client_order_id: input.clientOrderId ?? null,
+  };
 }
 
 /**
@@ -42,24 +62,90 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_pos_order", {
-    p_items: input.cart.map((item) => ({
-      product_id: item.productId,
-      quantity: item.quantity,
-    })),
-    p_payment_method: input.paymentMethod,
-    p_pickup_name: input.pickupName ?? null,
-    p_cash_received: input.cashReceived ?? null,
-    p_ewallet_provider: input.ewalletProvider ?? null,
-    p_customer_type: input.customerType ?? "regular",
-    p_discount_id_number: input.discountIdNumber ?? null,
-  });
+  const { data, error } = await supabase.rpc("create_pos_order", rpcArgs(input));
   if (error) throw new Error(error.message);
 
   const created = data as { id: string };
   const order = await getOrderById(created.id);
   if (!order) throw new Error("Order was created but could not be loaded.");
   return order;
+}
+
+export type SubmitPosSaleErrorKind =
+  | "auth"
+  | "stock"
+  | "product_unavailable"
+  | "validation"
+  | "unknown";
+
+export type SubmitPosSaleResult =
+  | { ok: true; order: Order }
+  | { ok: false; kind: SubmitPosSaleErrorKind; message: string };
+
+/** Maps the custom SQLSTATEs raised by create_pos_order (see
+ * 0009_pos_order_idempotency.sql) to a classification the offline sync
+ * engine can act on without parsing English error text. */
+const RPC_ERROR_KIND: Record<string, SubmitPosSaleErrorKind> = {
+  PIC01: "validation",
+  PIC02: "product_unavailable",
+  PIC03: "stock",
+  PIC04: "validation",
+  PIC05: "validation",
+};
+
+/**
+ * Same underlying RPC call as `createOrder`, but never throws - returns a
+ * typed result instead, since Next.js Server Actions only forward
+ * `Error.message` to the client (custom properties like `.code` are
+ * dropped). This is what the offline sync engine calls so it can reliably
+ * tell "retry later" (network/stock races) apart from "ask a human" (bad
+ * input, expired session) failures.
+ */
+export async function submitPosSale(
+  input: CreateOrderInput,
+): Promise<SubmitPosSaleResult> {
+  try {
+    await requireStaff();
+  } catch (e) {
+    return {
+      ok: false,
+      kind: "auth",
+      message: e instanceof Error ? e.message : "You must be signed in to record a sale.",
+    };
+  }
+
+  if (input.cart.length === 0) {
+    return { ok: false, kind: "validation", message: "Cart is empty." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_pos_order", rpcArgs(input));
+  if (error) {
+    const kind = (error.code && RPC_ERROR_KIND[error.code]) || "unknown";
+    return { ok: false, kind, message: error.message };
+  }
+
+  const created = data as { id: string };
+  try {
+    const order = await getOrderById(created.id);
+    if (!order) {
+      return {
+        ok: false,
+        kind: "unknown",
+        message: "Order was created but could not be loaded.",
+      };
+    }
+    return { ok: true, order };
+  } catch (e) {
+    return {
+      ok: false,
+      kind: "unknown",
+      message:
+        e instanceof Error
+          ? `Order was created but could not be loaded: ${e.message}`
+          : "Order was created but could not be loaded.",
+    };
+  }
 }
 
 export async function updateOrderStatus(id: string, status: OrderStatus) {

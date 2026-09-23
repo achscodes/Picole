@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito, Outfit } from "next/font/google";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import "./globals.css";
 
 const body = Nunito({
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="min-h-dvh antialiased">
         <ToastProvider>{children}</ToastProvider>
         <ServiceWorkerRegistration />
+        <UpdatePrompt />
       </body>
     </html>
   );

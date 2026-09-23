@@ -9,42 +9,49 @@ import { PosMobileCartBar } from "@/components/pos/PosMobileCartBar";
 import { PosProductGrid } from "@/components/pos/PosProductGrid";
 import { PosReceipt } from "@/components/pos/PosReceipt";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { LastUpdatedNote } from "@/components/ui/LastUpdatedNote";
 import { usePosCart } from "@/components/pos/usePosCart";
 import { filterProductsByCategory, searchProducts } from "@/data/catalog";
 import { getProducts } from "@/lib/actions/products";
 import { getInventoryList } from "@/lib/actions/inventory";
 import { isProductAvailable } from "@/lib/pos";
+import { usePolledAction } from "@/hooks/usePolledAction";
 import type { CategoryId, Order, Product } from "@/types";
 import { useToast } from "@/components/ui/ToastProvider";
 
 type Screen = "catalog" | "checkout" | "receipt";
 
+interface PosCatalog {
+  products: Product[];
+  stockByProduct: Record<string, number>;
+}
+
 export function PosClient({ initialProducts }: { initialProducts: Product[] }) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
   const [activeCategory, setActiveCategory] = useState<CategoryId>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [screen, setScreen] = useState<Screen>("catalog");
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
+  const [completedQueued, setCompletedQueued] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    async function refresh() {
-      const [nextProducts, inventory] = await Promise.all([
-        getProducts(),
-        getInventoryList(),
-      ]);
-      setProducts(nextProducts);
-      const stock: Record<string, number> = {};
-      for (const item of inventory) stock[item.productId] = item.stock;
-      setStockByProduct(stock);
-    }
-    refresh();
-    const id = window.setInterval(refresh, 3000);
-    return () => window.clearInterval(id);
+  const fetchCatalog = useCallback(async (): Promise<PosCatalog> => {
+    const [nextProducts, inventory] = await Promise.all([getProducts(), getInventoryList()]);
+    const stock: Record<string, number> = {};
+    for (const item of inventory) stock[item.productId] = item.stock;
+    return { products: nextProducts, stockByProduct: stock };
   }, []);
+
+  const {
+    data: catalog,
+    isStale: catalogStale,
+    lastUpdatedAt: catalogUpdatedAt,
+  } = usePolledAction(fetchCatalog, {
+    cacheKey: "pos-catalog",
+    initialData: { products: initialProducts, stockByProduct: {} },
+  });
+  const { products, stockByProduct } = catalog;
 
   const getProduct = useCallback(
     (productId: string) => products.find((p) => p.id === productId),
@@ -84,8 +91,9 @@ export function PosClient({ initialProducts }: { initialProducts: Product[] }) {
     cart.addItem(productId, 1);
   }
 
-  function handleSaleComplete(order: Order) {
+  function handleSaleComplete(order: Order, queued: boolean) {
     setCompletedOrder(order);
+    setCompletedQueued(queued);
     setScreen("receipt");
     setMobileCartOpen(false);
   }
@@ -127,6 +135,11 @@ export function PosClient({ initialProducts }: { initialProducts: Product[] }) {
   return (
     <>
       <PageHeader title="New Order" subtitle="Select products to start a new order." />
+      <LastUpdatedNote
+        lastUpdatedAt={catalogUpdatedAt}
+        isStale={catalogStale}
+        className="-mt-2 mb-4 text-xs text-[var(--ink-muted)]"
+      />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
         <div className="min-w-0 flex-1 space-y-4">
@@ -194,7 +207,7 @@ export function PosClient({ initialProducts }: { initialProducts: Product[] }) {
       )}
 
       {screen === "receipt" && completedOrder && (
-        <PosReceipt order={completedOrder} onNewOrder={handleNewOrder} />
+        <PosReceipt order={completedOrder} queued={completedQueued} onNewOrder={handleNewOrder} />
       )}
     </>
   );

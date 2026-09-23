@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { Banknote, ChevronDown, HeartHandshake, Smartphone } from "lucide-react";
-import type { CustomerType, Order, PaymentMethod, Product } from "@/types";
+import type { CustomerType, Order, OrderItem, PaymentMethod, Product } from "@/types";
 import { PosPaymentCash } from "@/components/pos/PosPaymentCash";
 import { PosPaymentEwallet } from "@/components/pos/PosPaymentEwallet";
 import { SelectableChip } from "@/components/ui/SelectableChip";
 import {
   calcDiscount,
+  calcExpectedChange,
   needsDiscountVerification,
   PWD_SENIOR_DISCOUNT_RATE,
 } from "@/lib/orders";
@@ -38,7 +39,7 @@ export function PosCheckoutPanel({
   cart: PosCart;
   getProduct: (productId: string) => Product | undefined;
   onBack: () => void;
-  onSaleComplete: (order: Order) => void;
+  onSaleComplete: (order: Order, queued: boolean) => void;
 }) {
   const [customerName, setCustomerName] = useState("");
   const [customerType, setCustomerType] = useState<CustomerType>("regular");
@@ -58,21 +59,71 @@ export function PosCheckoutPanel({
     setCustomerType(type);
   }
 
+  function buildQueuedPseudoOrder(
+    clientOrderId: string,
+    paymentMethod: PaymentMethod,
+    details: { cashReceived?: number; discountIdNumber?: string },
+  ): Order {
+    const items: OrderItem[] = cart.items.map((item) => {
+      const product = getProduct(item.productId);
+      return {
+        productId: item.productId,
+        name: product?.name ?? "Item",
+        quantity: item.quantity,
+        unitPrice: product?.price ?? 0,
+        subtotal: (product?.price ?? 0) * item.quantity,
+      };
+    });
+    const { discountRate, discountAmount, total } = calcDiscount(cart.subtotal, customerType);
+    const now = new Date().toISOString();
+    return {
+      id: clientOrderId,
+      orderNumber: "Pending sync",
+      items,
+      totalAmount: total,
+      paymentMethod,
+      paymentStatus: "pending",
+      orderStatus: "pending",
+      pickupName: customerName || undefined,
+      cashReceived: details.cashReceived,
+      expectedChange:
+        details.cashReceived != null ? calcExpectedChange(details.cashReceived, total) : undefined,
+      customerType,
+      subtotalBeforeDiscount: cart.subtotal,
+      discountRate: discountRate || undefined,
+      discountAmount: discountAmount || undefined,
+      discountStatus: requiresIdVerification ? "pending" : "none",
+      discountIdNumber: details.discountIdNumber,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
   async function handleComplete(details: { cashReceived?: number; discountIdNumber?: string }) {
     if (!paymentMethod) return;
     setError("");
     setSubmitting(true);
     try {
-      const order = await completePosSale({
-        cart: cart.items,
-        paymentMethod,
-        pickupName: customerName,
-        cashReceived: details.cashReceived,
-        customerType,
-        discountIdNumber: details.discountIdNumber,
-      });
+      const outcome = await completePosSale(
+        {
+          cart: cart.items,
+          paymentMethod,
+          pickupName: customerName,
+          cashReceived: details.cashReceived,
+          customerType,
+          discountIdNumber: details.discountIdNumber,
+        },
+        getProduct,
+      );
       cart.clear();
-      onSaleComplete(order);
+      if (outcome.status === "confirmed") {
+        onSaleComplete(outcome.order, false);
+      } else {
+        onSaleComplete(
+          buildQueuedPseudoOrder(outcome.clientOrderId, paymentMethod, details),
+          true,
+        );
+      }
     } catch (e) {
       setError(
         e instanceof Error

@@ -23,6 +23,11 @@ import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { logout } from "@/lib/actions/auth";
 import { cn } from "@/lib/format";
+import { clearReadCaches } from "@/lib/offline/db";
+import { useOfflineSaleQueue } from "@/hooks/useOfflineSaleQueue";
+import { ConnectivityBadge } from "@/components/pwa/ConnectivityBadge";
+import { OfflineBanner } from "@/components/pwa/OfflineBanner";
+import { PendingSyncIndicator } from "@/components/pwa/PendingSyncIndicator";
 import type { Session } from "@/types/auth";
 import { useState, useTransition } from "react";
 
@@ -72,10 +77,19 @@ export function DashboardShell({ session, children }: DashboardShellProps) {
   const [desktopNavExpanded, setDesktopNavExpanded] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [, startTransition] = useTransition();
+  const { pendingSales, retry, cancel } = useOfflineSaleQueue(session);
 
   const role = session.role;
   const nav = role === "admin" ? ADMIN_NAV : STAFF_NAV;
   const subtitle = role === "admin" ? "Admin Dashboard" : "Staff";
+
+  const unsyncedCount = pendingSales.filter(
+    (sale) => sale.status !== "synced" && sale.status !== "synced-with-discrepancy",
+  ).length;
+  const signOutMessage =
+    unsyncedCount > 0
+      ? `${unsyncedCount} sale${unsyncedCount === 1 ? "" : "s"} you rang up ${unsyncedCount === 1 ? "hasn't" : "haven't"} synced yet. Signing out won't lose ${unsyncedCount === 1 ? "it" : "them"}, but you (or an admin) will need to sign back in to finish syncing.`
+      : "You will need to enter your credentials to access the portal again.";
 
   return (
     <div className="flex min-h-dvh hero-gradient">
@@ -180,11 +194,17 @@ export function DashboardShell({ session, children }: DashboardShellProps) {
                 Picolé Operations
               </p>
             </div>
-            <span className="rounded-full bg-[var(--sidebar-soft)] px-3 py-1 text-xs font-medium text-[var(--sidebar)]">
-              {session.email}
-            </span>
+            <div className="flex items-center gap-2">
+              <ConnectivityBadge />
+              <PendingSyncIndicator pendingSales={pendingSales} onRetry={retry} onCancel={cancel} />
+              <span className="rounded-full bg-[var(--sidebar-soft)] px-3 py-1 text-xs font-medium text-[var(--sidebar)]">
+                {session.email}
+              </span>
+            </div>
           </div>
         </header>
+
+        <OfflineBanner />
 
         <main className="hero-gradient flex-1 px-4 py-6 sm:px-6">{children}</main>
       </div>
@@ -192,11 +212,16 @@ export function DashboardShell({ session, children }: DashboardShellProps) {
       <ConfirmDialog
         open={confirmSignOut}
         title="Sign out?"
-        message="You will need to enter your credentials to access the portal again."
+        message={signOutMessage}
         confirmLabel="Sign out"
         onCancel={() => setConfirmSignOut(false)}
         onConfirm={() => {
           startTransition(async () => {
+            // logout() is a Server Action and can't touch client storage
+            // itself - clear read caches here so the next person on a
+            // shared terminal never sees this cashier's cached data.
+            // pendingSales is never cleared this way (see clearReadCaches).
+            await clearReadCaches();
             await logout();
             router.replace("/login");
           });

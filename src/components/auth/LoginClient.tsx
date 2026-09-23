@@ -7,6 +7,7 @@ import { BRAND } from "@/data/catalog";
 import { login, registerStaff } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/format";
+import { clearReadCaches, getMeta, setMeta } from "@/lib/offline/db";
 
 type Tab = "login" | "register";
 
@@ -34,6 +35,15 @@ export function LoginClient() {
         setError(result.error);
         return;
       }
+      // On a shared terminal, a different cashier signing in should never
+      // see the previous cashier's cached product/inventory/order data -
+      // wipe it (never pendingSales, which survives any user switch so an
+      // un-synced sale can't be lost - see src/lib/offline/db.ts).
+      const previousUserId = await getMeta<string>("activeUserId");
+      if (previousUserId && previousUserId !== result.session.userId) {
+        await clearReadCaches();
+      }
+      await setMeta("activeUserId", result.session.userId);
       router.replace(roleHomePath(result.session.role));
     });
   }

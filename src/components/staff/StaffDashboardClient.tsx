@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Wallet, Receipt, ShoppingBag, Package } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import { LastUpdatedNote } from "@/components/ui/LastUpdatedNote";
 import { getDashboardStats } from "@/lib/actions/dashboard";
 import { formatShortTime } from "@/lib/dashboard";
 import { formatPeso } from "@/lib/format";
+import { usePolledAction } from "@/hooks/usePolledAction";
 
 const EMPTY_STATS = {
   todaySales: 0,
@@ -21,21 +22,10 @@ const EMPTY_STATS = {
 };
 
 export function StaffDashboardClient() {
-  const [stats, setStats] = useState(EMPTY_STATS);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      const next = await getDashboardStats();
-      if (!cancelled) setStats(next);
-    }
-    refresh();
-    const id = window.setInterval(refresh, 3000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, []);
+  const { data: stats, isStale, lastUpdatedAt } = usePolledAction(getDashboardStats, {
+    cacheKey: "staff-dashboard-stats",
+    initialData: EMPTY_STATS,
+  });
 
   return (
     <>
@@ -43,6 +33,7 @@ export function StaffDashboardClient() {
         title="Dashboard"
         subtitle="Today at the Picolé stall."
       />
+      <LastUpdatedNote lastUpdatedAt={lastUpdatedAt} isStale={isStale} className="-mt-4 mb-4 text-xs text-[var(--ink-muted)]" />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
