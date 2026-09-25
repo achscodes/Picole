@@ -65,9 +65,7 @@ export async function ReportsClient() {
             <LineChart
               data={salesChart}
               height={192}
-              valueFormatter={(v) =>
-                v >= 1000 ? `₱${Math.round(v / 100) / 10}k` : `₱${v}`
-              }
+              valueFormat="peso"
             />
           </div>
         </div>

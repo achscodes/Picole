@@ -31,9 +31,7 @@ export function SalesTrendCard({ days = 7 }: { days?: number }) {
         <LineChart
           data={salesChart}
           height={192}
-          valueFormatter={(v) =>
-            v >= 1000 ? `₱${Math.round(v / 100) / 10}k` : `₱${v}`
-          }
+          valueFormat="peso"
         />
       </div>
     </div>

@@ -8,14 +8,21 @@ type LineChartPoint = {
 type LineChartProps = {
   data: LineChartPoint[];
   height?: number;
-  valueFormatter?: (value: number) => string;
+  valueFormat?: "number" | "peso";
 };
 
 export function LineChart({
   data,
   height = 208,
-  valueFormatter = (v) => String(v),
+  valueFormat = "number",
 }: LineChartProps) {
+  const formatValue = (value: number) => {
+    if (valueFormat !== "peso") return String(value);
+    return value >= 1000
+      ? `₱${Math.round(value / 100) / 10}k`
+      : `₱${value}`;
+  };
+
   if (data.length === 0) {
     return (
       <div
@@ -78,7 +85,7 @@ export function LineChart({
               textAnchor="end"
               className="fill-[var(--ink-muted)] text-[10px]"
             >
-              {valueFormatter(tick.value)}
+              {formatValue(tick.value)}
             </text>
           </g>
         ))}
@@ -104,7 +111,7 @@ export function LineChart({
               strokeWidth={2}
             />
             <title>
-              {p.label}: {valueFormatter(p.value)}
+              {p.label}: {formatValue(p.value)}
             </title>
           </g>
         ))}

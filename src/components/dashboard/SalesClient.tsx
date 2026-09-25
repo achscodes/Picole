@@ -158,9 +158,7 @@ export function SalesClient({
         <div className="mt-4">
           <LineChart
             data={chart}
-            valueFormatter={(v) =>
-              v >= 1000 ? `₱${Math.round(v / 100) / 10}k` : `₱${v}`
-            }
+            valueFormat="peso"
           />
         </div>
       </div>
