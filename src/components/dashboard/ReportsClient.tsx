@@ -12,13 +12,23 @@ import { formatPeso } from "@/lib/format";
 import { listOrders } from "@/lib/orders-data";
 
 export async function ReportsClient() {
-  const [orders, salesByDay, ordersByDay, bestSellers, payments] = await Promise.all([
+  const results = await Promise.allSettled([
     listOrders(),
     getSalesByDay(14),
     getOrdersByDay(14),
     getBestSellers(5),
     getPaymentBreakdown(),
   ]);
+
+  const [ordersResult, salesByDayResult, ordersByDayResult, bestSellersResult, paymentsResult] = results;
+  const orders = ordersResult.status === "fulfilled" ? ordersResult.value : [];
+  const salesByDay = salesByDayResult.status === "fulfilled" ? salesByDayResult.value : [];
+  const ordersByDay = ordersByDayResult.status === "fulfilled" ? ordersByDayResult.value : [];
+  const bestSellers = bestSellersResult.status === "fulfilled" ? bestSellersResult.value : [];
+  const payments = paymentsResult.status === "fulfilled"
+    ? paymentsResult.value
+    : { cash: 0, ewallet: 0, total: 0 };
+  const hasDataError = results.some((result) => result.status === "rejected");
 
   const completed = orders.filter((o) => o.orderStatus === "completed");
   const totalSales = sumSales(completed);
@@ -34,6 +44,11 @@ export async function ReportsClient() {
         title="Reports"
         subtitle="Basic performance overview."
       />
+      {hasDataError && (
+        <p className="mb-6 rounded-xl border border-[var(--brand-orange)]/30 bg-[var(--brand-orange)]/10 px-4 py-3 text-sm text-[var(--ink)]">
+          Some analytics data is temporarily unavailable. Available results are shown below.
+        </p>
+      )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Total Sales" value={formatPeso(totalSales)} />
